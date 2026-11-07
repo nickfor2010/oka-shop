@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>OKA Small Cheesecake Shop · 小小起司蛋糕店</title>
+<meta name="description" content="Handmade cheesecake in 220g jars, made in Tainan and shipped chilled across Taiwan. 台南手作起司蛋糕，全台低溫寄送。">
+<meta name="theme-color" content="#FAF6EE">
+<link rel="icon" href="/favicon.png" type="image/png">
+<link rel="apple-touch-icon" href="/img/apple-touch-icon.png">
+<meta property="og:title" content="OKA Small Cheesecake Shop">
+<meta property="og:description" content="Little cakes. Big happiness. Made in Tainan, shipped chilled across Taiwan.">
+<meta property="og:image" content="/img/icon-512.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;700;800&family=Nunito+Sans:opsz,wght@6..12,400;6..12,600;6..12,700&family=Noto+Sans+TC:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="/css/oka.css">
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="#top" aria-label="OKA home"><span class="logo" aria-hidden="true"></span><span><b>OKA</b><small data-t="shop">Small Cheesecake Shop</small></span></a>
+    <nav class="links" aria-label="Main">
+      <a href="#flavors" data-t="navFlavors">Flavors</a>
+      <a href="#box" data-t="navBox">Gift Box</a>
+      <a href="#story" data-t="navStory">Our Story</a>
+      <a href="#order" data-t="navOrder">How to Order</a>
+    </nav>
+    <div class="tools">
+      <div class="lang" role="group" aria-label="Language">
+        <button type="button" id="lang-en" data-lang="en">EN</button>
+        <button type="button" id="lang-zh" data-lang="zh">繁</button>
+      </div>
+      <button type="button" class="acctbtn" id="acctbtn" aria-label="Log in with LINE">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>
+        <img id="acctpic" alt="" hidden>
+      </button>
+      <button type="button" class="bagbtn" id="bagbtn" aria-label="Open bag">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 8h14l-1.2 12H6.2z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>
+        <span data-t="bag">Bag</span><span class="count num" id="bagcount">0</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main id="top">
+  <section class="hero">
+    <div class="wrap">
+      <div>
+        <div class="eyebrow" data-t="heroEyebrow">Made in Tainan · Shipped across Taiwan</div>
+        <h1 data-t="heroTitle" data-html>Little cakes.<br><em>Big happiness.</em></h1>
+        <p class="lede" data-t="heroLede">Handmade cheesecake, layered into 220g jars and shipped chilled anywhere in Taiwan.</p>
+        <p class="lede-zh zh" data-t="heroLede2">一口甜點，剛剛好，就是幸福。</p>
+        <div class="cta">
+          <a class="btn solid" href="#flavors" data-t="ctaShop">Shop flavors</a>
+          <a class="btn ghost" href="#box" data-t="ctaBox">Build a gift box</a>
+        </div>
+        <div class="facts">
+          <div><b class="num">220g</b><span data-t="factJar">per jar</span></div>
+          <div><b class="num" id="factFlavors">6</b><span id="factFlavorsLbl">flavors · 2 coming soon</span></div>
+          <div><b class="num" id="factShipFee">NT$220</b><span id="factShipLbl">shipping · free over NT$2,000</span></div>
+        </div>
+      </div>
+      <div class="shelf" id="shelf" aria-hidden="true">
+        <span class="ribbon" data-t="ribbon">Shipped chilled</span>
+      </div>
+    </div>
+  </section>
+
+  <svg class="crustline wrap" viewBox="0 0 1200 14" preserveAspectRatio="none" aria-hidden="true"><path d="M0 7 Q 15 1 30 7 T 60 7 T 90 7 T 120 7 T 150 7 T 180 7 T 210 7 T 240 7 T 270 7 T 300 7 T 330 7 T 360 7 T 390 7 T 420 7 T 450 7 T 480 7 T 510 7 T 540 7 T 570 7 T 600 7 T 630 7 T 660 7 T 690 7 T 720 7 T 750 7 T 780 7 T 810 7 T 840 7 T 870 7 T 900 7 T 930 7 T 960 7 T 990 7 T 1020 7 T 1050 7 T 1080 7 T 1110 7 T 1140 7 T 1170 7 T 1200 7" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+
+  <section class="block" id="flavors">
+    <div class="wrap">
+      <div class="sechead">
+        <div><div class="eyebrow" data-t="colEyebrow">The collection</div><h2 data-t="colTitle">Pick your jars</h2></div>
+        <p data-t="colLede">Every jar is 220g and made fresh in Tainan. Add a few, or build a gift box of six below.</p>
+      </div>
+      <p class="banner" id="menuNote" hidden style="margin-bottom:16px"></p>
+      <div class="grid" id="flavorGrid"></div>
+    </div>
+  </section>
+
+  <section class="block" id="box">
+    <div class="wrap">
+      <div class="builder">
+        <div>
+          <div class="eyebrow" id="boxEyebrow">Save 10%</div>
+          <h2 style="font-size:clamp(1.7rem,3.4vw,2.4rem);margin-top:8px" data-t="boxTitle">Build your box of six</h2>
+          <p class="muted" style="margin-top:10px;max-width:42ch" id="boxLede">Choose any six jars, repeats welcome. You get 10% off the jars, plus NT$50 for the OKA gift box.</p>
+          <div style="margin-top:22px;display:flex;justify-content:space-between;align-items:baseline">
+            <strong id="boxProgress" class="num">0 / 6</strong>
+            <span class="price num" id="boxPrice" style="font-family:var(--f-display);font-weight:800;font-size:1.3rem"></span>
+          </div>
+          <div class="meter" aria-hidden="true"><b id="boxMeter" style="width:0"></b></div>
+          <p class="muted num" id="boxBreak" style="font-size:.85rem;margin-top:8px"></p>
+          <div class="picker" id="picker"></div>
+          <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:22px">
+            <button type="button" class="btn ghost" id="boxSurprise" data-t="boxSurprise">Surprise me</button>
+            <button type="button" class="btn ghost" id="boxClear" data-t="boxClear">Clear</button>
+          </div>
+        </div>
+        <div>
+          <div class="boxviz" id="boxviz" style="margin-top:14px"></div>
+          <p class="muted" style="font-size:.82rem;margin-top:10px;text-align:center" data-t="boxHint">Tap a jar in the box to take it out.</p>
+          <div class="boxbar"><div><span class="muted num" id="boxBarCount">0 / 6</span><strong class="num" id="boxBarPrice"></strong></div><div class="stepper" role="group" aria-label="Number of boxes" id="boxQtyGroup"><button type="button" id="boxQtyMinus" aria-label="−">−</button><span class="num" id="boxQty">1</span><button type="button" id="boxQtyPlus" aria-label="+">+</button></div><button type="button" class="btn solid" id="boxAdd" disabled>Add box to bag</button></div>
+          <p class="muted" id="boxOffHint" style="font-size:.85rem;margin-top:8px;text-align:center"></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block story" id="story">
+    <div class="wrap">
+      <div class="bigmark logo" aria-hidden="true"></div>
+      <div class="copy">
+        <div class="eyebrow" data-t="storyEyebrow">Our story</div>
+        <h2 style="font-size:clamp(1.8rem,3.6vw,2.6rem);margin:8px 0 18px" data-t="storyTitle">A small dessert, just right</h2>
+        <p data-t="story1">OKA started with a simple idea: a small, well-balanced dessert can change an afternoon.</p>
+        <p data-t="story2">We bake in small batches in Tainan, layer each cheesecake by hand into a 220g jar, seal it fresh and ship it chilled. There is no storefront, just a kitchen and a lot of jars.</p>
+        <div class="return">
+          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="13" y="6" width="22" height="7" rx="2"/><rect x="10" y="13" width="28" height="29" rx="6"/><path d="M24 20c-3 4-6 7-6 11a6 6 0 0 0 12 0c0-4-3-7-6-11z"/><path d="M21 31a3 3 0 0 0 3 3"/></svg>
+          <div><strong data-t="returnTitle">Give your jar a second life</strong>
+            <p class="muted" style="font-size:.94rem;margin-top:4px" data-t="returnBody">Our jars are light, sturdy plastic, so they travel safely. Please don't throw them away: follow us on Instagram for reels with easy ideas to reuse them.</p>
+            <a class="iglink" href="https://www.instagram.com/oka_chessecake" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>@oka_chessecake</a></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="order">
+    <div class="wrap">
+      <div class="sechead"><div><div class="eyebrow" data-t="howEyebrow">How it works</div><h2 data-t="howTitle">How to order</h2></div></div>
+      <ol class="steps">
+        <li><h3 data-t="s1t">Choose</h3><p data-t="s1p">Pick single jars or a box of six.</p></li>
+        <li><h3 data-t="s2t">Check out</h3><p data-t="s2p">Enter your address and choose a ship date.</p></li>
+        <li><h3 data-t="s3t">Transfer</h3><p data-t="s3p">Pay the total by bank transfer.</p></li>
+        <li><h3 data-t="s4t">Confirm on LINE</h3><p data-t="s4p">Send your order number and transfer screenshot to @637xgnpi.</p></li>
+        <li><h3 data-t="s5t">We ship</h3><p data-t="s5p">Your jars leave Tainan chilled on the date you chose.</p></li>
+      </ol>
+      <div class="ship">
+        <div><h3 data-t="shipH">Shipping</h3><ul>
+          <li id="ship1"></li>
+          <li id="ship2"></li>
+          <li data-t="ship3">Chilled delivery anywhere in Taiwan</li></ul></div>
+        <div><h3 data-t="daysH">Shipping days</h3><ul>
+          <li data-t="days1">Orders ship Monday to Friday</li>
+          <li data-t="days2">Pick your ship date at checkout</li>
+          <li data-t="days3">We tell you on LINE when it has shipped</li></ul></div>
+        <div><h3 data-t="payH">Payment</h3><ul>
+          <li data-t="pay1">Bank transfer only</li>
+          <li data-t="pay2">Confirm your transfer on our official LINE</li>
+          <li data-t="pay3">We start preparing once payment is confirmed</li></ul></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="reviews">
+    <div class="wrap">
+      <div class="sechead"><div><div class="eyebrow" data-t="revEyebrow">From our customers</div><h2 data-t="revTitle">Loved by the jar</h2></div>
+        <p class="num" id="revSummary"></p></div>
+      <div class="reviews" id="reviewList"></div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div>
+      <a class="brand" href="#top"><span class="logo" aria-hidden="true" style="width:46px;height:54px"></span><span><b>OKA</b><small data-t="shop">Small Cheesecake Shop</small></span></a>
+      <p style="margin-top:12px" data-t="footTag">Made in Tainan · Shipped across Taiwan</p>
+      <p class="zh">台南製作 · 全台寄送</p>
+    </div>
+    <div>
+      <h4 data-t="contactH">Contact</h4>
+      <ul>
+        <li><span class="copyline">LINE <span id="lineId">@637xgnpi</span> <button type="button" class="copybtn" data-copy="@637xgnpi" data-t="copy">Copy</button></span></li>
+        <li><a class="iglink" href="https://www.instagram.com/oka_chessecake" target="_blank" rel="noopener" style="margin:0">Instagram @oka_chessecake</a></li>
+        <li><span class="copyline"><span>okaintouch@gmail.com</span> <button type="button" class="copybtn" data-copy="okaintouch@gmail.com" data-t="copy">Copy</button></span></li>
+      </ul>
+    </div>
+    <div>
+      <h4 data-t="infoH">Good to know</h4>
+      <ul><li data-t="info1">Ships Mon–Fri</li><li data-t="info2">Bank transfer only</li><li id="info3">Free shipping over NT$2,000</li></ul>
+    </div>
+  </div>
+  <div class="wrap"><p class="proto">© <span id="year">2026</span> OKA · <a href="/privacy" class="dlink" data-t="privacyLink">Privacy</a></p></div>
+</footer>
+
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer" aria-label="Your bag" aria-hidden="true">
+  <div class="dhead"><h2 id="dtitle">Your bag</h2><button type="button" class="iconbtn" id="dclose" aria-label="Close">×</button></div>
+  <div class="dbody" id="dbody"></div>
+  <div class="dfoot" id="dfoot"></div>
+</aside>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script type="module" src="/js/shop.js"></script>
+</body>
+</html>

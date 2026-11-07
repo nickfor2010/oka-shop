@@ -1,0 +1,20 @@
+{
+  "name": "oka-shop",
+  "version": "1.0.0",
+  "private": true,
+  "description": "OKA Small Cheesecake Shop: bilingual online shop with LINE Login, bank-transfer checkout and an admin dashboard.",
+  "main": "server.js",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "start": "node --no-warnings server.js",
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "test": "node --no-warnings --test test/*.test.js"
+  },
+  "devDependencies": {
+    "wrangler": "^4.157.0"
+  },
+  "type": "module"
+}

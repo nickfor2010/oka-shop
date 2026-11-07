@@ -1,0 +1,26 @@
+// Cloudflare Workers config for the OKA shop.
+// On the first deploy Cloudflare creates the "oka-shop" D1 database and the "oka-shop-photos" R2 bucket automatically.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "oka-shop",
+  "main": "src/worker.js",
+  "compatibility_date": "2026-10-01",
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "not_found_handling": "404-page",
+    "run_worker_first": ["/api/*", "/auth/*", "/photos/*", "/healthz"]
+  },
+  "d1_databases": [
+    { "binding": "DB", "database_name": "oka-shop" }
+  ],
+  "r2_buckets": [
+    { "binding": "PHOTOS", "bucket_name": "oka-shop-photos" }
+  ],
+  // Add these in the dashboard (Worker → Settings → Variables and Secrets, type "Secret") so deploys never overwrite them:
+  // ADMIN_PASSWORD, LINE_LOGIN_CHANNEL_ID, LINE_LOGIN_CHANNEL_SECRET, LINE_MESSAGING_TOKEN. See README.
+  "vars": {
+    "APP_TIMEZONE": "Asia/Taipei"
+  },
+  "observability": { "enabled": true }
+}

@@ -9,10 +9,12 @@ The online shop for **OKA Small Cheesecake Shop** (小小起司蛋糕店): handm
   - ship date picker (Mon–Fri, with closed days and an optional daily limit)
   - bank-transfer payment step where the customer enters the **last 5 digits** of their account
   - **My orders** with live status
+  - **Share button**: the phone's share menu on mobile, or LINE / Facebook / copy link on a computer. Shared links show a preview image with the OKA logo.
 - **Automatic LINE messages** from the OKA Official Account: order received (with the bank details), payment confirmed, shipped (with tracking number), cancelled. The team can get new-order and payment-report alerts on their own LINE.
 - **Admin** (`/admin`), password sign-in for the owner and staff:
   - **Orders:** status counters, filters, search, confirm payment, mark shipped with tracking, cancel or undo, a history and LINE message log per order, team notes, CSV export
   - **Production:** jars to bake per flavor for each ship date
+  - **Customers:** everyone who logged in with LINE, with contact details from their latest order, number of orders, total paid, join date and whether they're a LINE friend (non-friends don't get messages); search, order history per customer, CSV export (owner only)
   - **Products:** names, prices, status (on sale / coming soon / hidden), photos
   - **Settings:** shipping, gift box discount, ship days, closed dates, daily limit, bank details
   - **Team:** staff accounts. Staff handle orders; only owners change products, prices and settings.

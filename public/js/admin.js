@@ -6,7 +6,7 @@ const STATUSES = ['awaiting', 'reported', 'paid', 'shipped', 'cancelled'];
 const T = {
   en: {
     admTitle: 'Shop admin', signIn: 'Sign in', name: 'Name', password: 'Password', wrong: 'Wrong name or password', firstRun: 'First time? Use the name you want and the password from setup.',
-    tabOrders: 'Orders', tabProduction: 'Production', tabProducts: 'Products', tabSettings: 'Settings', tabTeam: 'Team',
+    tabOrders: 'Orders', tabProduction: 'Production', tabCustomers: 'Customers', tabProducts: 'Products', tabSettings: 'Settings', tabTeam: 'Team',
     viewShop: 'View shop', changePw: 'Change password', alertsOn: 'Send new orders to my LINE', alertsOff: 'Stop LINE alerts', logout: 'Sign out',
     pwBanner: "You're still using the first password. Please change it.", pwCurrent: 'Current password', pwNew: 'New password (8+ characters)', pwSaved: 'Password changed',
     alertsNeedLogin: 'Open the shop in this browser, log in with LINE, then come back and turn alerts on.', alertsDone: 'LINE alerts on. We sent you a test message.', alertsStopped: 'LINE alerts off',
@@ -36,11 +36,15 @@ const T = {
     dow: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
     teamLead: 'Staff can manage orders and see production. Only owners change products, prices, settings and the team.', addMember: 'Add team member', role: 'Role', owner: 'Owner', staff: 'Staff',
     you: 'you', inactive: 'Signed-in disabled', pwNotChanged: 'first password', alertsBadge: 'LINE alerts', makeOwner: 'Make owner', makeStaff: 'Make staff', disable: 'Disable', enable: 'Enable', resetPw: 'Reset password', newPwFor: (n) => `New password for ${n}`,
+    cTotal: 'Customers', cNew: 'New this month', cRepeat: 'Ordered 2+ times', cNotFriend: 'Not LINE friends', cSearch: 'Search name, LINE name, phone, city…',
+    cNone: 'No customers yet. Everyone who logs in with LINE appears here.', cNoMatch: 'No customers match.', cJoined: 'Joined', cLastOrder: 'Last order', cNoOrders: 'No orders yet',
+    cOrders: (n) => `${n} order${n === 1 ? '' : 's'}`, cSpent: 'Paid', cOpen: (n) => `${n} waiting for payment`, cFriendNo: 'Not a LINE friend: messages won\'t arrive', cFriendYes: 'LINE friend',
+    cProfileNote: 'Name, phone and address are from their latest order.', cOrderList: 'Orders', cOpenOrder: 'Open in Orders', cLang: 'Language', cLastLogin: 'Last login', cCsvOwner: 'Export CSV',
     errGeneric: 'Something went wrong. Please try again.',
   },
   zh: {
     admTitle: '商店後台', signIn: '登入', name: '名稱', password: '密碼', wrong: '名稱或密碼錯誤', firstRun: '第一次使用？輸入想用的名稱與設定時的密碼。',
-    tabOrders: '訂單', tabProduction: '製作量', tabProducts: '商品', tabSettings: '設定', tabTeam: '團隊',
+    tabOrders: '訂單', tabProduction: '製作量', tabCustomers: '顧客', tabProducts: '商品', tabSettings: '設定', tabTeam: '團隊',
     viewShop: '查看商店', changePw: '變更密碼', alertsOn: '新訂單傳到我的 LINE', alertsOff: '停止 LINE 通知', logout: '登出',
     pwBanner: '你還在使用初始密碼，請盡快變更。', pwCurrent: '目前密碼', pwNew: '新密碼（至少 8 個字元）', pwSaved: '密碼已變更',
     alertsNeedLogin: '請先在這個瀏覽器開啟商店並用 LINE 登入，再回來開啟通知。', alertsDone: 'LINE 通知已開啟，已傳送測試訊息。', alertsStopped: 'LINE 通知已關閉',
@@ -70,6 +74,10 @@ const T = {
     dow: ['日', '一', '二', '三', '四', '五', '六'],
     teamLead: '員工可以處理訂單和查看製作量。只有擁有者可以修改商品、價格、設定和團隊。', addMember: '新增成員', role: '角色', owner: '擁有者', staff: '員工',
     you: '你', inactive: '已停用', pwNotChanged: '初始密碼', alertsBadge: 'LINE 通知', makeOwner: '設為擁有者', makeStaff: '設為員工', disable: '停用', enable: '啟用', resetPw: '重設密碼', newPwFor: (n) => `${n} 的新密碼`,
+    cTotal: '顧客', cNew: '本月新顧客', cRepeat: '回購 2 次以上', cNotFriend: '尚未加好友', cSearch: '搜尋姓名、LINE 名稱、電話、縣市…',
+    cNone: '目前還沒有顧客。用 LINE 登入的人都會出現在這裡。', cNoMatch: '沒有符合的顧客。', cJoined: '加入', cLastOrder: '最近訂單', cNoOrders: '尚未下單',
+    cOrders: (n) => `${n} 筆訂單`, cSpent: '已付款', cOpen: (n) => `${n} 筆待付款`, cFriendNo: '尚未加好友：收不到 LINE 通知', cFriendYes: 'LINE 好友',
+    cProfileNote: '姓名、電話與地址來自最近一筆訂單。', cOrderList: '訂單', cOpenOrder: '在訂單中查看', cLang: '語言', cLastLogin: '最近登入', cCsvOwner: '匯出 CSV',
     errGeneric: '發生錯誤，請再試一次。',
   },
 };
@@ -82,6 +90,7 @@ const root = $('#root');
 let me = null, info = {}, tab = store.get('oka-admin-tab', 'orders');
 let ordersData = null, filter = 'all', shipFilter = '', query = '', openNo = null, detail = null, confirmKey = null, shipKey = null;
 let products = [], editing = null, settings = null, team = [], prod = null;
+let custData = null, custQuery = '', custOpen = null, custDetail = null;
 
 const field = (id, label, val, attrs = '') => `<div class="field"><label for="${id}">${label}</label><input id="${id}" value="${esc(val ?? '')}" ${attrs}></div>`;
 const pname = (p) => (lang === 'zh' ? p.zh : p.en);
@@ -121,7 +130,7 @@ function renderAcct() {
 }
 function renderShell() {
   renderAcct();
-  const tabs = ['orders', 'production', 'products', ...(isOwner() ? ['settings', 'team'] : [])];
+  const tabs = ['orders', 'production', 'customers', 'products', ...(isOwner() ? ['settings', 'team'] : [])];
   if (!tabs.includes(tab)) tab = 'orders';
   root.innerHTML = `${!me.pw_changed ? `<p class="banner no-print" style="margin-bottom:14px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap"><span>${t('pwBanner')}</span><button type="button" class="dlink" id="pwOpen2">${t('changePw')}</button></p>` : ''}
     ${!info.lineMessaging && isOwner() ? `<p class="banner no-print" style="margin-bottom:14px">${t('lineOff')}</p>` : ''}
@@ -137,6 +146,7 @@ async function loadTab() {
   try {
     if (tab === 'orders') { await loadOrders(); }
     if (tab === 'production') { prod = await api('/api/admin/production'); renderProduction(); }
+    if (tab === 'customers') { await loadCustomers(); }
     if (tab === 'products') { products = (await api('/api/admin/products')).products; renderProducts(); }
     if (tab === 'settings') { settings = (await api('/api/admin/settings')).settings; renderSettings(); }
     if (tab === 'team') { team = (await api('/api/admin/team')).team; renderTeam(); }
@@ -233,6 +243,54 @@ function renderProduction() {
       <tbody>${ids.map((i) => `<tr><td>${esc(P[i] ? pname(P[i]) : i)}</td><td>${d.confirmed[i] || 0}</td><td class="muted">${d.pending[i] || 0}</td><td><b>${(d.confirmed[i] || 0) + (d.pending[i] || 0)}</b></td></tr>`).join('')}</tbody>
       <tfoot><tr><td>${t('totalJars')}</td><td>${sc}</td><td>${sp}</td><td>${sc + sp}</td></tr></tfoot></table></div></section>`;
   }).join('')}`;
+}
+
+// ---------- customers ----------
+async function loadCustomers() {
+  custData = await api('/api/admin/customers' + (custQuery ? '?q=' + encodeURIComponent(custQuery) : ''));
+  if (custOpen) custDetail = await api(`/api/admin/customers/${custOpen}`).catch(() => null);
+  renderCustomers();
+}
+const fmtDay = (ms) => { if (!ms) return ''; const d = new Date(ms); return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`; };
+function avatar(c, size = 44) {
+  const initial = esc((c.line_name || c.name || '?').trim().charAt(0).toUpperCase());
+  return c.picture
+    ? `<img src="${esc(c.picture)}" alt="" width="${size}" height="${size}" style="width:${size}px;height:${size}px;border-radius:50%;object-fit:cover;flex:none" loading="lazy" referrerpolicy="no-referrer">`
+    : `<span aria-hidden="true" style="width:${size}px;height:${size}px;border-radius:50%;background:var(--paper-2);display:grid;place-items:center;font-weight:800;flex:none">${initial}</span>`;
+}
+function custDetailHtml(c) {
+  if (!custDetail || custDetail.customer.id !== c.id) return '<div class="detail"><p class="muted"><span class="loading"></span></p></div>';
+  const o = custDetail.orders;
+  return `<div class="detail">
+    <div><h4>${t('cOrderList')}</h4>${!o.length ? `<p class="muted">${t('cNoOrders')}</p>` : `<ul class="timeline">${o.map((x) => `<li><span class="when">${fmtTime(x.created_at)}</span>
+      <span><b class="num">${esc(x.no)}</b> · <span class="pill ${x.status}">${t('st_' + x.status)}</span> · ${money(x.total)} · ${t('ships')} ${fmtDate(x.ship_date, lang)}
+      <button type="button" class="dlink" data-goorder="${esc(x.no)}">${t('cOpenOrder')}</button></span></li>`).join('')}</ul>`}</div>
+    <div><h4>${t('cProfileNote')}</h4><ul class="timeline">
+      <li><span class="when">${t('cJoined')}</span><span>${fmtTime(c.created_at)}</span></li>
+      <li><span class="when">${t('cLastLogin')}</span><span>${c.last_login ? fmtTime(c.last_login) : '–'}</span></li>
+      <li><span class="when">${t('cLang')}</span><span>${c.lang === 'zh' ? '中文' : 'English'}</span></li>
+      <li><span class="when">LINE</span><span>${esc(c.line_name)} · ${c.friend === false ? `<b class="msg-failed">${t('cFriendNo')}</b>` : c.friend ? `<b class="msg-sent">${t('cFriendYes')}</b>` : '–'}</span></li>
+    </ul></div></div>`;
+}
+function renderCustomers() {
+  const d = custData, s = d.summary;
+  $('#body').innerHTML = `<div class="tiles">
+      <div class="tile"><b>${s.total}</b><span>${t('cTotal')}</span></div>
+      <div class="tile"><b>${s.newThisMonth}</b><span>${t('cNew')}</span></div>
+      <div class="tile"><b>${s.repeat}</b><span>${t('cRepeat')}</span></div>
+      <div class="tile ${s.notFriends ? 'alert' : ''}"><b>${s.notFriends}</b><span>${t('cNotFriend')}</span></div></div>
+    <div class="filters no-print"><input id="cq" type="search" placeholder="${t('cSearch')}" value="${esc(custQuery)}" aria-label="${t('cSearch')}" style="margin-left:0">
+      ${isOwner() ? `<a class="btn ghost small-btn" href="/api/admin/customers.csv">${t('cCsvOwner')}</a>` : ''}</div>
+    <div class="olist">${!s.total ? `<p class="muted">${t('cNone')}</p>` : !d.customers.length ? `<p class="muted">${t('cNoMatch')}</p>` : d.customers.map((c) => `<article class="orow" style="grid-template-columns:1.3fr 1.2fr 1fr auto">
+      <div style="display:flex;gap:12px;align-items:flex-start">${avatar(c)}<div style="min-width:0"><h3 style="font-variant-numeric:normal">${esc(c.name || c.line_name)}</h3>
+        <small>LINE: ${esc(c.line_name)}${c.friend === false ? ` · <span style="color:#C2412D">${t('cNotFriend')}</span>` : ''}</small>
+        <p style="margin-top:6px"><button type="button" class="dlink" data-cust="${c.id}">${custOpen === c.id ? t('hide') : t('details')}</button></p></div></div>
+      <div><small style="color:var(--ink)">${esc(c.phone) || '–'}</small><small>${esc(c.email)}</small><small>${esc(c.city)} ${esc(c.addr)}</small></div>
+      <div><small>${t('cJoined')} ${fmtDay(c.created_at)}</small><small>${c.last_order ? `${t('cLastOrder')} ${fmtDay(c.last_order)}` : t('cNoOrders')}</small>
+        ${c.open_orders ? `<small style="color:var(--st-wait)">${t('cOpen')(c.open_orders)}</small>` : ''}</div>
+      <div class="acts" style="text-align:right"><strong class="num" style="font-family:var(--f-display);font-size:1.15rem">${money(c.spent)}</strong><small class="muted">${t('cOrders')(c.orders)}</small></div>
+      ${custOpen === c.id ? custDetailHtml(c) : ''}
+    </article>`).join('')}</div>`;
 }
 
 // ---------- products ----------
@@ -358,6 +416,8 @@ document.addEventListener('click', async (e) => {
   if (d.move) return move(d.no, d.move);
   if (d.note) { try { await api(`/api/admin/orders/${encodeURIComponent(d.note)}/note`, { method: 'POST', body: { admin_note: $('#note-' + CSS.escape(d.note)).value } }); toast(t('noteSaved')); await loadOrders(); } catch (er) { handleErr(er); } return; }
   if (d.resend) { try { const r = await api(`/api/admin/orders/${encodeURIComponent(d.resend)}/resend`, { method: 'POST', body: {} }); toast(t('s_' + (r.result?.status || 'skipped'))); await loadOrders(); } catch (er) { handleErr(er); } return; }
+  if (d.cust) { const id = Number(d.cust); custOpen = custOpen === id ? null : id; custDetail = null; renderCustomers(); if (custOpen) { custDetail = await api(`/api/admin/customers/${id}`).catch(() => null); renderCustomers(); } return; }
+  if (d.goorder) { tab = 'orders'; filter = 'all'; shipFilter = ''; query = d.goorder; openNo = d.goorder; detail = null; return renderShell(); }
   if (d.edit) { editing = { ...products.find((p) => p.id === d.edit) }; confirmKey = null; renderProducts(); window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
   if (d.unclose) { settings.closedDates = settings.closedDates.filter((x) => x !== d.unclose); return renderSettings(); }
   if (d.role) return teamUpdate(d.role, { role: d.to });
@@ -383,6 +443,7 @@ document.addEventListener('click', async (e) => {
 });
 let qTimer;
 document.addEventListener('input', (e) => {
+  if (e.target.id === 'cq') { clearTimeout(qTimer); qTimer = setTimeout(() => { custQuery = e.target.value.trim(); loadCustomers().then(() => { const q = $('#cq'); q.focus(); q.setSelectionRange(q.value.length, q.value.length); }).catch(handleErr); }, 300); }
   if (e.target.id === 'q') { clearTimeout(qTimer); qTimer = setTimeout(() => { query = e.target.value.trim(); loadOrders().then(() => { const q = $('#q'); q.focus(); q.setSelectionRange(q.value.length, q.value.length); }).catch(handleErr); }, 300); }
   if (['p-color', 'p-deco'].includes(e.target.id) && editing && !editing.photo) $('#prodPrev').innerHTML = jar(readEditor());
 });

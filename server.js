@@ -52,6 +52,13 @@ function serveStatic(req, res) {
   fs.stat(file, (err, st) => {
     if (err || !st.isFile()) { res.writeHead(404, { 'Content-Type': 'text/html; charset=utf-8' }); return fs.createReadStream(path.join(PUBLIC_DIR, '404.html')).pipe(res); }
     const ext = path.extname(file);
+    if (file === path.join(PUBLIC_DIR, 'index.html')) {
+      // Same as the Cloudflare host: absolute addresses in the link-preview tags.
+      const origin = `${req.headers['x-forwarded-proto'] || 'http'}://${req.headers.host || 'localhost'}`;
+      const html = fs.readFileSync(file, 'utf8').replace(/(<meta property="og:[^"]+" content=")\//g, `$1${origin}/`);
+      res.writeHead(200, { 'Content-Type': MIME[ext], 'Cache-Control': 'no-cache', 'X-Content-Type-Options': 'nosniff' });
+      return res.end(html);
+    }
     res.writeHead(200, { 'Content-Type': MIME[ext] || 'application/octet-stream', 'Cache-Control': ext === '.html' ? 'no-cache' : 'public, max-age=300', 'X-Content-Type-Options': 'nosniff' });
     fs.createReadStream(file).pipe(res);
   });

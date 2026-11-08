@@ -10,7 +10,12 @@
 <link rel="apple-touch-icon" href="/img/apple-touch-icon.png">
 <meta property="og:title" content="OKA Small Cheesecake Shop">
 <meta property="og:description" content="Little cakes. Big happiness. Made in Tainan, shipped chilled across Taiwan.">
-<meta property="og:image" content="/img/icon-512.png">
+<meta property="og:type" content="website">
+<meta property="og:url" content="/">
+<meta property="og:image" content="/img/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;700;800&family=Nunito+Sans:opsz,wght@6..12,400;6..12,600;6..12,700&family=Noto+Sans+TC:wght@400;500;700&display=swap">
@@ -34,6 +39,7 @@
       <button type="button" class="acctbtn" id="acctbtn" aria-label="Log in with LINE">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>
         <img id="acctpic" alt="" hidden>
+        <span id="acctinit" hidden></span>
       </button>
       <button type="button" class="bagbtn" id="bagbtn" aria-label="Open bag">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 8h14l-1.2 12H6.2z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>
@@ -55,6 +61,7 @@
           <a class="btn solid" href="#flavors" data-t="ctaShop">Shop flavors</a>
           <a class="btn ghost" href="#box" data-t="ctaBox">Build a gift box</a>
         </div>
+        <button type="button" class="sharebtn" data-share><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg><span data-t="share">Share OKA with friends</span></button>
         <div class="facts">
           <div><b class="num">220g</b><span data-t="factJar">per jar</span></div>
           <div><b class="num" id="factFlavors">6</b><span id="factFlavorsLbl">flavors · 2 coming soon</span></div>
@@ -177,6 +184,7 @@
         <li><a class="iglink" href="https://www.instagram.com/oka_chessecake" target="_blank" rel="noopener" style="margin:0">Instagram @oka_chessecake</a></li>
         <li><span class="copyline"><span>okaintouch@gmail.com</span> <button type="button" class="copybtn" data-copy="okaintouch@gmail.com" data-t="copy">Copy</button></span></li>
       </ul>
+      <button type="button" class="sharebtn" data-share style="margin-top:10px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg><span data-t="share">Share OKA with friends</span></button>
     </div>
     <div>
       <h4 data-t="infoH">Good to know</h4>
@@ -192,6 +200,18 @@
   <div class="dbody" id="dbody"></div>
   <div class="dfoot" id="dfoot"></div>
 </aside>
+<div class="sheet" id="shareSheet" role="dialog" aria-modal="true" aria-labelledby="shareTitle" hidden>
+  <div class="sheet-card">
+    <div class="sheet-head"><h2 id="shareTitle" data-t="shareTitle">Share OKA</h2><button type="button" class="iconbtn" id="shareClose" aria-label="Close">×</button></div>
+    <p class="muted" id="shareText" style="font-size:.92rem"></p>
+    <div class="sharelist">
+      <a class="shareopt" id="shareLine" target="_blank" rel="noopener"><span class="ico line">LINE</span><span data-t="shareLine">Send on LINE</span></a>
+      <a class="shareopt" id="shareFb" target="_blank" rel="noopener"><span class="ico fb">f</span><span data-t="shareFb">Share on Facebook</span></a>
+      <button type="button" class="shareopt" id="shareCopy"><span class="ico">🔗</span><span data-t="shareCopy">Copy link</span></button>
+    </div>
+    <p class="num" id="shareUrl" style="font-size:.85rem;color:var(--ink-soft);overflow-wrap:anywhere;margin-top:10px"></p>
+  </div>
+</div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <script type="module" src="/js/shop.js"></script>
 </body>

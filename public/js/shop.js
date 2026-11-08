@@ -58,6 +58,8 @@ const T = {
     added: (n) => `${n} added to your bag`, boxAdded: (n) => (n > 1 ? `${n} gift boxes added to your bag` : 'Gift box added to your bag'),
     loginCancelled: 'LINE login was cancelled.', loginFailed: "LINE login didn't work. Please try again.", loginExpired: 'The login took too long. Please try again.',
     loading: 'Loading…', retry: 'Something went wrong. Please try again.',
+    share: 'Share OKA with friends', shareTitle: 'Share OKA', shareLine: 'Send on LINE', shareFb: 'Share on Facebook', shareCopy: 'Copy link', shareCopied: 'Link copied',
+    shareText: 'OKA: handmade cheesecake in little jars, made in Tainan and shipped chilled across Taiwan 🫙', shareAfter: 'Know someone who would love OKA? Share the shop',
   },
   zh: {
     shop: '小小起司蛋糕店', navFlavors: '口味', navBox: '禮盒', navStory: '品牌故事', navOrder: '訂購方式', bag: '購物袋',
@@ -106,6 +108,8 @@ const T = {
     added: (n) => `已將 ${n} 加入購物袋`, boxAdded: (n) => `已將 ${n} 盒禮盒加入購物袋`,
     loginCancelled: '已取消 LINE 登入。', loginFailed: 'LINE 登入失敗，請再試一次。', loginExpired: '登入逾時，請再試一次。',
     loading: '載入中…', retry: '發生錯誤，請再試一次。',
+    share: '分享 OKA 給朋友', shareTitle: '分享 OKA', shareLine: '用 LINE 傳送', shareFb: '分享到 Facebook', shareCopy: '複製連結', shareCopied: '已複製連結',
+    shareText: 'OKA 小小起司蛋糕：台南手作，一罐一罐低溫寄送到全台灣 🫙', shareAfter: '有朋友也會喜歡嗎？分享給他們',
   },
 };
 
@@ -151,6 +155,9 @@ function applyI18n() {
   ab.setAttribute('aria-label', me ? t('myOrders') : t('loginBtn'));
   pic.hidden = !(me && me.picture);
   if (me?.picture) pic.src = me.picture;
+  const ini = $('#acctinit');
+  ini.hidden = !(me && !me.picture);
+  ini.textContent = (me?.name || '?').trim().charAt(0).toUpperCase();
 }
 function renderShelf() {
   const sh = $('#shelf');
@@ -326,6 +333,7 @@ function renderPay(body, foot) {
       <div class="field"><label for="f-last5">${t('last5L')}</label><input id="f-last5" name="last5" class="last5" inputmode="numeric" maxlength="5" autocomplete="off" placeholder="•••••" aria-describedby="h-l5" value="${esc(payEdit ? o.last5 : '')}"><span class="muted" id="h-l5" style="font-size:.8rem">${t('last5Hint')}</span><span class="err" id="e-last5" hidden></span></div>
     </form>` : o.status === 'reported' ? `<p class="note" style="margin-top:16px">${t('reported')} ${t('l5')} <span class="l5">${esc(o.last5)}</span></p><p style="margin-top:8px"><button type="button" class="dlink" id="fixDigits">${t('fixDigits')}</button></p>` : ''}
     <p class="muted" style="font-size:.86rem;margin-top:14px">${t('orLine')}</p>
+    <button type="button" class="sharebtn" data-share><span>${t('shareAfter')} →</span></button>
   </div>`;
   foot.innerHTML = canReport
     ? `<button type="submit" form="payForm" class="btn solid" id="reportBtn">${t('report')}</button><button type="button" class="btn ghost" id="payLater">${t('later')}</button>`
@@ -440,10 +448,13 @@ document.addEventListener('click', async (e) => {
     return;
   }
   if (b.hasAttribute('data-close')) { closeBag(); return; }
+  if (b.hasAttribute('data-share')) { share(); return; }
   switch (b.id) {
     case 'bagbtn': if (view !== 'checkout') view = 'bag'; renderBag(); openBag(); break;
     case 'acctbtn': if (me) { go('orders'); openBag(); } else if (loginMode === 'off') toast(t('loginOff')); else location.href = '/auth/line?return=' + encodeURIComponent('/#orders'); break;
     case 'dclose': closeBag(); break;
+    case 'shareClose': closeShare(); break;
+    case 'shareCopy': copyShare(); break;
     case 'boxAdd': addBox(); break;
     case 'boxClear': box = []; boxQty = 1; renderBox(); break;
     case 'boxQtyMinus': boxQty = Math.max(1, boxQty - 1); renderBox(); break;
@@ -459,7 +470,33 @@ document.addEventListener('click', async (e) => {
 });
 document.addEventListener('input', (e) => { if (e.target.id === 'f-last5') e.target.value = e.target.value.replace(/\D/g, '').slice(0, 5); });
 $('#scrim').addEventListener('click', closeBag);
-document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && $('#drawer').classList.contains('on')) closeBag(); });
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape') return;
+  if (!$('#shareSheet').hidden) closeShare(); else if ($('#drawer').classList.contains('on')) closeBag();
+});
+$('#shareSheet').addEventListener('click', (e) => { if (e.target.id === 'shareSheet') closeShare(); });
+
+// ---------- share ----------
+const shopUrl = () => location.origin + '/';
+let shareOpener = null;
+async function share() {
+  const url = shopUrl(), text = t('shareText');
+  // Phones: the system share menu (LINE, Instagram, WhatsApp…). Elsewhere: our own small menu.
+  if (navigator.share && matchMedia('(pointer: coarse)').matches) {
+    try { await navigator.share({ title: 'OKA', text, url }); return; } catch (e) { if (e?.name === 'AbortError') return; }
+  }
+  $('#shareText').textContent = text;
+  $('#shareUrl').textContent = url;
+  $('#shareLine').href = 'https://line.me/R/share?text=' + encodeURIComponent(`${text}\n${url}`);
+  $('#shareFb').href = 'https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(url);
+  shareOpener = document.activeElement;
+  $('#shareSheet').hidden = false;
+  $('#shareClose').focus();
+}
+function closeShare() { $('#shareSheet').hidden = true; shareOpener?.focus?.(); }
+async function copyShare() {
+  try { await navigator.clipboard.writeText(shopUrl()); toast(t('shareCopied')); closeShare(); } catch { selectText($('#shareUrl')); }
+}
 document.addEventListener('submit', (e) => {
   e.preventDefault();
   if (e.target.id === 'coForm') placeOrder(e.target);

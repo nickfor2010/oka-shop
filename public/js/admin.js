@@ -512,4 +512,7 @@ setInterval(() => {
   if (me && tab === 'orders' && document.visibilityState === 'visible' && !confirmKey && !shipKey && document.activeElement?.tagName !== 'TEXTAREA' && document.activeElement?.id !== 'q') loadOrders().catch(() => {});
 }, 60000);
 
+// Lets the admin be installed as its own desktop app (Chrome / Edge: Install "OKA 管理").
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('/admin-sw.js', { scope: '/admin' }).catch(() => {});
+
 boot();

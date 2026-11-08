@@ -126,7 +126,9 @@ function renderAcct() {
   m.hidden = false;
   m.innerHTML = `<button type="button" class="btn ghost small-btn" id="acctToggle" aria-expanded="false">${esc(me.name)} ▾</button>
     <div hidden id="acctMenu"><a href="/" target="_blank" rel="noopener">${t('viewShop')} ↗</a><button type="button" id="pwOpen">${t('changePw')}</button>
-    <button type="button" id="alertsToggle">${me.line_alerts ? t('alertsOff') : t('alertsOn')}</button><button type="button" id="logout">${t('logout')}</button></div>`;
+    <button type="button" id="alertsToggle">${me.line_alerts ? t('alertsOff') : t('alertsOn')}</button>
+    <div class="menu-theme">${document.querySelector('.adm-top .themesw').outerHTML.replace('themesw compact', 'themesw')}</div>
+    <button type="button" id="logout">${t('logout')}</button></div>`;
 }
 function renderShell() {
   renderAcct();

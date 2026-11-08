@@ -308,3 +308,50 @@ test('shop page: link preview tags use full addresses', async () => {
   assert.match(html, new RegExp(`<meta property="og:image" content="${dev.base}/img/og.png">`));
   assert.match(html, new RegExp(`<meta property="og:url" content="${dev.base}/">`));
 });
+
+test('reviews: only after shipping, shown on the shop only once approved', async () => {
+  const admin = await adminLogin(dev.base);
+  const c = client(dev.base);
+  await devLogin(c, 'Rita');
+  const shop = (await c('/api/shop')).data;
+  assert.equal(shop.reviews.count, 0);
+  const o = (await c('/api/orders', { method: 'POST', body: { items: [{ type: 'box', items: ['classic', 'lemon', 'lemon'], qty: 1 }], name: 'Rita', phone: '0933444555', city: 'X', addr: 'Y', ship_date: shop.shipDates[0].date } })).data.order;
+  const review = { rating: 5, text: 'So creamy, the lemon is perfect!', product_id: 'lemon', display_name: 'Rita C.' };
+  assert.equal((await c(`/api/orders/${o.no}/review`, { method: 'POST', body: review })).status, 409); // not shipped yet
+  await admin(`/api/admin/orders/${o.no}/status`, { method: 'POST', body: { status: 'paid' } });
+  await admin(`/api/admin/orders/${o.no}/status`, { method: 'POST', body: { status: 'shipped' } });
+  // The "shipped" LINE message (logged as skipped here) carries the review link
+  await dev.settle();
+  const msgs = (await admin(`/api/admin/orders/${o.no}`)).data.messages;
+  assert.ok(msgs.find((m) => m.kind === 'shipped').text.includes(`/#review-${o.no}`));
+  // Validation, and nobody else can review this order
+  assert.equal((await c(`/api/orders/${o.no}/review`, { method: 'POST', body: { ...review, rating: 6 } })).status, 400);
+  assert.equal((await c(`/api/orders/${o.no}/review`, { method: 'POST', body: { ...review, text: 'ok' } })).status, 400);
+  const other = client(dev.base);
+  await devLogin(other, 'Sam');
+  assert.equal((await other(`/api/orders/${o.no}/review`, { method: 'POST', body: review })).status, 404);
+  // Write, then correct while pending
+  assert.equal((await c(`/api/orders/${o.no}/review`, { method: 'POST', body: review })).status, 201);
+  const fixed = await c(`/api/orders/${o.no}/review`, { method: 'POST', body: { ...review, rating: 4, product_id: 'chocolate' } }); // chocolate wasn't in the order
+  assert.equal(fixed.status, 200);
+  assert.equal(fixed.data.review.rating, 4);
+  assert.equal(fixed.data.review.product_id, null);
+  assert.equal((await c('/api/orders')).data.orders.find((x) => x.no === o.no).review.status, 'pending');
+  // Not public until approved
+  assert.equal((await client(dev.base)('/api/shop')).data.reviews.count, 0);
+  let list = (await admin('/api/admin/reviews')).data;
+  assert.equal(list.counts.pending, 1);
+  const id = list.reviews[0].id;
+  assert.equal(list.reviews[0].order_no, o.no);
+  assert.equal((await admin(`/api/admin/reviews/${id}`, { method: 'POST', body: { status: 'approved' } })).status, 200);
+  const pub = (await client(dev.base)('/api/shop')).data.reviews;
+  assert.equal(pub.count, 1);
+  assert.equal(pub.average, 4);
+  assert.equal(pub.list[0].name, 'Rita C.');
+  assert.ok(!('line_name' in pub.list[0]) && !('order_no' in pub.list[0])); // no private details on the public shop
+  // Once checked, the customer can't change it; unpublishing hides it again
+  assert.equal((await c(`/api/orders/${o.no}/review`, { method: 'POST', body: review })).status, 409);
+  await admin(`/api/admin/reviews/${id}`, { method: 'POST', body: { status: 'rejected' } });
+  assert.equal((await client(dev.base)('/api/shop')).data.reviews.count, 0);
+  assert.equal((await client(dev.base)('/api/admin/reviews')).status, 401);
+});

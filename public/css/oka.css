@@ -350,3 +350,9 @@ form.co{display:flex;flex-direction:column;gap:14px}
 @media (max-width:620px){.adm-top .who > .themesw{display:none}.menu-theme{display:block}}
 .menu .themesw button{padding:6px 12px;color:var(--ink-soft)}
 .menu .themesw button[aria-pressed="true"],.menu .themesw button[aria-pressed="true"]:hover{background:var(--ink);color:var(--paper)}
+
+/* review stars picker */
+.starpick{display:flex;gap:4px}
+.starpick button{background:none;border:0;font-size:2rem;line-height:1;padding:2px 4px;color:var(--line);cursor:pointer}
+.starpick button.on{color:var(--crust)}
+.starpick button:hover{transform:scale(1.1)}

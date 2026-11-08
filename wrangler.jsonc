@@ -22,5 +22,7 @@
   "vars": {
     "APP_TIMEZONE": "Asia/Taipei"
   },
+  // Keep variables added in the dashboard when a new version is deployed (secrets are always kept).
+  "keep_vars": true,
   "observability": { "enabled": true }
 }

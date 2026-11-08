@@ -337,3 +337,16 @@ form.co{display:flex;flex-direction:column;gap:14px}
 .shareopt .ico.fb{background:#1877F2;color:#fff;font-size:1.2rem;font-family:Arial,sans-serif}
 @media (min-width:700px){.sheet{align-items:center}}
 .acctbtn span{font-family:var(--f-display);font-weight:800;font-size:1rem}
+
+/* day / night switch */
+.themesw{display:inline-flex;border:1.5px solid var(--line);border-radius:999px;padding:3px;gap:2px;margin-top:14px;background:var(--card)}
+.themesw button{display:inline-flex;align-items:center;gap:6px;background:none;border:0;border-radius:999px;padding:5px 12px;font-weight:700;font-size:.84rem;color:var(--ink-soft)}
+.themesw button svg{width:16px;height:16px;flex:none}
+.themesw button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.themesw.compact{margin-top:0}
+.themesw.compact button{padding:5px 8px}
+.menu-theme{display:none;padding:6px 8px}
+.menu-theme .themesw{margin-top:0}
+@media (max-width:620px){.adm-top .who > .themesw{display:none}.menu-theme{display:block}}
+.menu .themesw button{padding:6px 12px;color:var(--ink-soft)}
+.menu .themesw button[aria-pressed="true"],.menu .themesw button[aria-pressed="true"]:hover{background:var(--ink);color:var(--paper)}

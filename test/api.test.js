@@ -271,3 +271,40 @@ test('LINE: login, order messages and team alerts', async () => {
   const detail = (await a(`/api/admin/orders/${o.no}`)).data;
   assert.ok(detail.messages.some((m) => m.kind === 'paid' && m.status === 'sent'));
 });
+
+test('admin: customers list, details and CSV', async () => {
+  const admin = await adminLogin(dev.base);
+  const list = (await admin('/api/admin/customers')).data;
+  // Amy, Bob and Cap logged in during the earlier tests; Amy has one shipped order of NT$2,420
+  assert.ok(list.summary.total >= 3);
+  const amy = list.customers.find((c) => c.line_name === 'Amy');
+  assert.equal(amy.orders, 1);
+  assert.equal(amy.spent, 2420);
+  assert.equal(amy.phone, '0912345678');
+  assert.ok(!('line_user_id' in amy)); // internal LINE id never leaves the server
+  const bob = list.customers.find((c) => c.line_name === 'Bob');
+  assert.equal(bob.orders, 0);
+  assert.equal((await admin('/api/admin/customers?q=0912345678')).data.customers.length, 1);
+  assert.equal((await admin('/api/admin/customers?q=nobody-here')).data.customers.length, 0);
+  const det = (await admin(`/api/admin/customers/${amy.id}`)).data;
+  assert.equal(det.customer.id, amy.id);
+  assert.equal(det.orders.length, 1);
+  assert.equal(det.orders[0].status, 'shipped');
+  assert.equal((await admin('/api/admin/customers/99999')).status, 404);
+  const csv = await admin('/api/admin/customers.csv');
+  assert.match(csv.type, /text\/csv/);
+  assert.ok(csv.data.includes('Amy'));
+  // Staff can see customers but not export them; signed-out visitors get nothing
+  await admin('/api/admin/team', { method: 'POST', body: { name: 'Mei', password: 'helper-pass-9', role: 'staff' } });
+  const staff = client(dev.base);
+  await staff('/api/admin/login', { method: 'POST', body: { name: 'Mei', password: 'helper-pass-9' } });
+  assert.equal((await staff('/api/admin/customers')).status, 200);
+  assert.equal((await staff('/api/admin/customers.csv')).status, 403);
+  assert.equal((await client(dev.base)('/api/admin/customers')).status, 401);
+});
+
+test('shop page: link preview tags use full addresses', async () => {
+  const html = await (await fetch(dev.base + '/')).text();
+  assert.match(html, new RegExp(`<meta property="og:image" content="${dev.base}/img/og.png">`));
+  assert.match(html, new RegExp(`<meta property="og:url" content="${dev.base}/">`));
+});

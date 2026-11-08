@@ -547,6 +547,46 @@ export function createApp({ db, timezone = 'Asia/Taipei', adminPassword = 'oka-a
     return json({ days: await production(14), products: await listProducts(true) });
   });
 
+  // ----- admin: customers (everyone who has logged in with LINE) -----
+  const CUSTOMER_STATS = `SELECT c.*, COUNT(o.id) AS orders,
+      COALESCE(SUM(CASE WHEN o.status IN ('paid','shipped') THEN o.total END), 0) AS spent,
+      SUM(CASE WHEN o.status IN ('awaiting','reported') THEN 1 ELSE 0 END) AS open_orders,
+      MAX(o.created_at) AS last_order
+    FROM customers c LEFT JOIN orders o ON o.customer_id = c.id`;
+  const customerAdminOut = (c) => ({
+    id: c.id, line_name: c.line_name, picture: c.line_picture, friend: c.friend === null || c.friend === undefined ? null : !!c.friend,
+    name: c.name, phone: c.phone, email: c.email, city: c.city, addr: c.addr, lang: c.lang, created_at: c.created_at, last_login: c.last_login,
+    orders: c.orders || 0, spent: c.spent || 0, open_orders: c.open_orders || 0, last_order: c.last_order || null,
+  });
+  route('GET', '/api/admin/customers', async ({ req, url }) => {
+    await requireAdmin(req);
+    const q = str(url.searchParams.get('q'), 60);
+    const params = q ? Array(6).fill(`%${q}%`) : [];
+    const rows = await db.all(`${CUSTOMER_STATS} ${q ? 'WHERE (c.line_name LIKE ? OR c.name LIKE ? OR c.phone LIKE ? OR c.email LIKE ? OR c.city LIKE ? OR c.addr LIKE ?)' : ''}
+      GROUP BY c.id ORDER BY COALESCE(MAX(o.created_at), c.created_at) DESC LIMIT 1000`, params);
+    const monthStart = Date.parse(dayKey(now()).slice(0, 8) + '01T00:00:00+08:00');
+    const s = await db.get(`SELECT COUNT(*) AS total, SUM(CASE WHEN created_at >= ? THEN 1 ELSE 0 END) AS new_month,
+      SUM(CASE WHEN friend = 0 THEN 1 ELSE 0 END) AS not_friends FROM customers`, [monthStart]);
+    const repeat = await db.get("SELECT COUNT(*) AS n FROM (SELECT customer_id FROM orders WHERE status != 'cancelled' GROUP BY customer_id HAVING COUNT(*) >= 2)");
+    return json({ customers: rows.map(customerAdminOut), summary: { total: s.total || 0, newThisMonth: s.new_month || 0, notFriends: s.not_friends || 0, repeat: repeat.n || 0 } });
+  });
+  route('GET', '/api/admin/customers/:id', async ({ req, params }) => {
+    await requireAdmin(req);
+    const c = await db.get(`${CUSTOMER_STATS} WHERE c.id = ? GROUP BY c.id`, [Number(params.id)]);
+    if (!c) throw new HttpError(404, 'Customer not found');
+    const orders = await db.all('SELECT * FROM orders WHERE customer_id = ? ORDER BY created_at DESC LIMIT 200', [c.id]);
+    return json({ customer: customerAdminOut(c), orders: orders.map((o) => orderOut(o, true)) });
+  });
+  route('GET', '/api/admin/customers.csv', async ({ req }) => {
+    await requireAdmin(req, true);
+    const rows = await db.all(`${CUSTOMER_STATS} GROUP BY c.id ORDER BY c.created_at`);
+    const head = ['Customer', 'LINE name', 'Name', 'Phone', 'Email', 'City', 'Address', 'LINE friend', 'Language', 'Joined', 'Last login', 'Orders', 'Paid total', 'Last order'];
+    const iso = (ms) => (ms ? new Date(ms).toISOString() : '');
+    const lines = rows.map((c) => [c.id, c.line_name, c.name, c.phone, c.email, c.city, c.addr, c.friend === null ? '' : c.friend ? 'yes' : 'no', c.lang,
+      iso(c.created_at), iso(c.last_login), c.orders, c.spent, iso(c.last_order)].map(csvCell).join(','));
+    return new Response('﻿' + [head.join(','), ...lines].join('\r\n'), { headers: { 'Content-Type': 'text/csv; charset=utf-8', 'Content-Disposition': `attachment; filename="oka-customers-${dayKey(now())}.csv"`, 'Cache-Control': 'no-store' } });
+  });
+
   // ----- admin: products -----
   route('GET', '/api/admin/products', async ({ req }) => { await requireAdmin(req); return json({ products: await listProducts(true), decos: DECOS }); });
   route('POST', '/api/admin/products', async ({ req, body }) => {

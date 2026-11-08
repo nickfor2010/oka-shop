@@ -9,7 +9,7 @@
     "directory": "./public",
     "binding": "ASSETS",
     "not_found_handling": "404-page",
-    "run_worker_first": ["/api/*", "/auth/*", "/photos/*", "/healthz"]
+    "run_worker_first": ["/", "/api/*", "/auth/*", "/photos/*", "/healthz"]
   },
   "d1_databases": [
     { "binding": "DB", "database_name": "oka-shop" }

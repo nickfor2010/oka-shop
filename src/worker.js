@@ -26,6 +26,15 @@ export default {
     });
     // LINE messages are sent after the response, so checkout and admin buttons feel instant.
     const res = await app.handle(request, { ip: request.headers.get('cf-connecting-ip') || 'unknown', defer: (p) => ctx.waitUntil(p) });
-    return res || env.ASSETS.fetch(request);
+    if (res) return res;
+    const url = new URL(request.url);
+    if (url.pathname === '/') {
+      // Link previews (LINE, Facebook) need absolute addresses, which depend on the domain the shop is opened on.
+      const abs = (v) => (v && v.startsWith('/') ? url.origin + v : v);
+      return new HTMLRewriter()
+        .on('meta[property^="og:"]', { element(el) { const c = el.getAttribute('content'); if (c?.startsWith('/')) el.setAttribute('content', abs(c)); } })
+        .transform(await env.ASSETS.fetch(request));
+    }
+    return env.ASSETS.fetch(request);
   },
 };

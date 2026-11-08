@@ -1,0 +1,17 @@
+{
+  "name": "OKA 管理 · Shop admin",
+  "short_name": "OKA 管理",
+  "description": "Orders, production, customers and reviews for the OKA Small Cheesecake Shop.",
+  "id": "/admin",
+  "start_url": "/admin",
+  "scope": "/admin",
+  "display": "standalone",
+  "background_color": "#1E3A6B",
+  "theme_color": "#1E3A6B",
+  "lang": "zh-Hant",
+  "icons": [
+    { "src": "/img/admin-icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/img/admin-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/img/admin-icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

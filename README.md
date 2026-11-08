@@ -9,11 +9,13 @@ The online shop for **OKA Small Cheesecake Shop** (小小起司蛋糕店): handm
   - ship date picker (Mon–Fri, with closed days and an optional daily limit)
   - bank-transfer payment step where the customer enters the **last 5 digits** of their account
   - **My orders** with live status
+  - **Reviews:** after an order ships, the customer can rate it (1–5 stars), pick the flavor and write a short review. Reviews appear on the shop only after the team approves them.
   - **Share button**: the phone's share menu on mobile, or LINE / Facebook / copy link on a computer. Shared links show a preview image with the OKA logo.
 - **Automatic LINE messages** from the OKA Official Account: order received (with the bank details), payment confirmed, shipped (with tracking number), cancelled. The team can get new-order and payment-report alerts on their own LINE.
 - **Admin** (`/admin`), password sign-in for the owner and staff:
   - **Orders:** status counters, filters, search, confirm payment, mark shipped with tracking, cancel or undo, a history and LINE message log per order, team notes, CSV export
   - **Production:** jars to bake per flavor for each ship date
+  - **Reviews:** approve or reject new reviews (with a LINE alert to the team), unpublish later
   - **Customers:** everyone who logged in with LINE, with contact details from their latest order, number of orders, total paid, join date and whether they're a LINE friend (non-friends don't get messages); search, order history per customer, CSV export (owner only)
   - **Products:** names, prices, status (on sale / coming soon / hidden), photos
   - **Settings:** shipping, gift box discount, ship days, closed dates, daily limit, bank details
@@ -40,7 +42,7 @@ The online shop for **OKA Small Cheesecake Shop** (小小起司蛋糕店): handm
 5. In **Settings**, fill in your bank details. Check the shipping fee, ship days and closed dates.
 6. In the account menu, choose **Send new orders to my LINE**. Before that, open the shop in the same browser and log in with LINE once.
 
-Every push to `main` updates the shop automatically. Orders stay in D1; Cloudflare keeps 30 days of point-in-time backups (Time Travel), and you can export orders as CSV.
+Every push to `main` updates the shop automatically. Variables added in the dashboard are kept on each deploy (`keep_vars`), but use type **Secret** for anything private. Orders stay in D1; Cloudflare keeps 30 days of point-in-time backups (Time Travel), and you can export orders as CSV.
 
 **Your own domain:** go to Worker → Settings → Domains & Routes → Add custom domain. If you change the domain, also update the LINE Login callback URL (below).
 

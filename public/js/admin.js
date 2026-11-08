@@ -6,7 +6,7 @@ const STATUSES = ['awaiting', 'reported', 'paid', 'shipped', 'cancelled'];
 const T = {
   en: {
     admTitle: 'Shop admin', signIn: 'Sign in', name: 'Name', password: 'Password', wrong: 'Wrong name or password', firstRun: 'First time? Use the name you want and the password from setup.',
-    tabOrders: 'Orders', tabProduction: 'Production', tabCustomers: 'Customers', tabProducts: 'Products', tabSettings: 'Settings', tabTeam: 'Team',
+    tabOrders: 'Orders', tabProduction: 'Production', tabCustomers: 'Customers', tabReviews: 'Reviews', tabProducts: 'Products', tabSettings: 'Settings', tabTeam: 'Team',
     viewShop: 'View shop', changePw: 'Change password', alertsOn: 'Send new orders to my LINE', alertsOff: 'Stop LINE alerts', logout: 'Sign out',
     pwBanner: "You're still using the first password. Please change it.", pwCurrent: 'Current password', pwNew: 'New password (8+ characters)', pwSaved: 'Password changed',
     alertsNeedLogin: 'Open the shop in this browser, log in with LINE, then come back and turn alerts on.', alertsDone: 'LINE alerts on. We sent you a test message.', alertsStopped: 'LINE alerts off',
@@ -40,11 +40,16 @@ const T = {
     cNone: 'No customers yet. Everyone who logs in with LINE appears here.', cNoMatch: 'No customers match.', cJoined: 'Joined', cLastOrder: 'Last order', cNoOrders: 'No orders yet',
     cOrders: (n) => `${n} order${n === 1 ? '' : 's'}`, cSpent: 'Paid', cOpen: (n) => `${n} waiting for payment`, cFriendNo: 'Not a LINE friend: messages won\'t arrive', cFriendYes: 'LINE friend',
     cProfileNote: 'Name, phone and address are from their latest order.', cOrderList: 'Orders', cOpenOrder: 'Open in Orders', cLang: 'Language', cLastLogin: 'Last login', cCsvOwner: 'Export CSV',
+    rvLead: 'Customers can review an order after it has shipped. Only approved reviews appear on the shop.', rv_pending: 'To approve', rv_approved: 'Published', rv_rejected: 'Not published',
+    rvNone: { pending: 'No reviews waiting for approval.', approved: 'No published reviews yet.', rejected: 'No rejected reviews.' },
+    rvApprove: 'Approve and publish', rvReject: 'Don\'t publish', rvUnpublish: 'Unpublish', rvRestore: 'Approve and publish', rvBy: (n) => `by ${n}`, rvWhole: 'Whole order', rvOrder: 'Order',
+    rvDone: { approved: 'Published on the shop', rejected: 'Not published', pending: 'Moved back to approval' },
+    'ev_review': 'Review written', 'ev_review-approved': 'Review published', 'ev_review-rejected': 'Review not published', 'ev_review-pending': 'Review back to approval', 'm_alert-review': 'Team alert',
     errGeneric: 'Something went wrong. Please try again.',
   },
   zh: {
     admTitle: '商店後台', signIn: '登入', name: '名稱', password: '密碼', wrong: '名稱或密碼錯誤', firstRun: '第一次使用？輸入想用的名稱與設定時的密碼。',
-    tabOrders: '訂單', tabProduction: '製作量', tabCustomers: '顧客', tabProducts: '商品', tabSettings: '設定', tabTeam: '團隊',
+    tabOrders: '訂單', tabProduction: '製作量', tabCustomers: '顧客', tabReviews: '評價', tabProducts: '商品', tabSettings: '設定', tabTeam: '團隊',
     viewShop: '查看商店', changePw: '變更密碼', alertsOn: '新訂單傳到我的 LINE', alertsOff: '停止 LINE 通知', logout: '登出',
     pwBanner: '你還在使用初始密碼，請盡快變更。', pwCurrent: '目前密碼', pwNew: '新密碼（至少 8 個字元）', pwSaved: '密碼已變更',
     alertsNeedLogin: '請先在這個瀏覽器開啟商店並用 LINE 登入，再回來開啟通知。', alertsDone: 'LINE 通知已開啟，已傳送測試訊息。', alertsStopped: 'LINE 通知已關閉',
@@ -78,6 +83,11 @@ const T = {
     cNone: '目前還沒有顧客。用 LINE 登入的人都會出現在這裡。', cNoMatch: '沒有符合的顧客。', cJoined: '加入', cLastOrder: '最近訂單', cNoOrders: '尚未下單',
     cOrders: (n) => `${n} 筆訂單`, cSpent: '已付款', cOpen: (n) => `${n} 筆待付款`, cFriendNo: '尚未加好友：收不到 LINE 通知', cFriendYes: 'LINE 好友',
     cProfileNote: '姓名、電話與地址來自最近一筆訂單。', cOrderList: '訂單', cOpenOrder: '在訂單中查看', cLang: '語言', cLastLogin: '最近登入', cCsvOwner: '匯出 CSV',
+    rvLead: '訂單出貨後，顧客就可以留下評價。只有核准的評價會出現在商店頁面。', rv_pending: '待審核', rv_approved: '已刊登', rv_rejected: '不刊登',
+    rvNone: { pending: '目前沒有待審核的評價。', approved: '還沒有已刊登的評價。', rejected: '沒有不刊登的評價。' },
+    rvApprove: '核准並刊登', rvReject: '不刊登', rvUnpublish: '取消刊登', rvRestore: '核准並刊登', rvBy: (n) => `由 ${n}`, rvWhole: '整筆訂單', rvOrder: '訂單',
+    rvDone: { approved: '已刊登在商店', rejected: '已設為不刊登', pending: '已改回待審核' },
+    'ev_review': '顧客留下評價', 'ev_review-approved': '評價已刊登', 'ev_review-rejected': '評價不刊登', 'ev_review-pending': '評價改回待審核', 'm_alert-review': '團隊通知',
     errGeneric: '發生錯誤，請再試一次。',
   },
 };
@@ -91,6 +101,7 @@ let me = null, info = {}, tab = store.get('oka-admin-tab', 'orders');
 let ordersData = null, filter = 'all', shipFilter = '', query = '', openNo = null, detail = null, confirmKey = null, shipKey = null;
 let products = [], editing = null, settings = null, team = [], prod = null;
 let custData = null, custQuery = '', custOpen = null, custDetail = null;
+let revData = null, revFilter = 'pending';
 
 const field = (id, label, val, attrs = '') => `<div class="field"><label for="${id}">${label}</label><input id="${id}" value="${esc(val ?? '')}" ${attrs}></div>`;
 const pname = (p) => (lang === 'zh' ? p.zh : p.en);
@@ -132,7 +143,7 @@ function renderAcct() {
 }
 function renderShell() {
   renderAcct();
-  const tabs = ['orders', 'production', 'customers', 'products', ...(isOwner() ? ['settings', 'team'] : [])];
+  const tabs = ['orders', 'production', 'customers', 'reviews', 'products', ...(isOwner() ? ['settings', 'team'] : [])];
   if (!tabs.includes(tab)) tab = 'orders';
   root.innerHTML = `${!me.pw_changed ? `<p class="banner no-print" style="margin-bottom:14px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap"><span>${t('pwBanner')}</span><button type="button" class="dlink" id="pwOpen2">${t('changePw')}</button></p>` : ''}
     ${!info.lineMessaging && isOwner() ? `<p class="banner no-print" style="margin-bottom:14px">${t('lineOff')}</p>` : ''}
@@ -140,6 +151,8 @@ function renderShell() {
     <div class="tabs" role="tablist">${tabs.map((k) => `<button type="button" role="tab" aria-selected="${tab === k}" data-tab="${k}">${t('tab' + k[0].toUpperCase() + k.slice(1))}</button>`).join('')}</div>
     <div id="body"></div>`;
   loadTab();
+  // Badge on the Reviews tab when reviews are waiting.
+  api('/api/admin/reviews?status=pending').then((r) => { const b = document.querySelector('[data-tab=reviews]'); if (b && r.counts.pending) b.insertAdjacentHTML('beforeend', ` <span class="num" style="background:var(--crust);color:var(--crust-ink);border-radius:999px;padding:0 7px;font-size:.78rem">${r.counts.pending}</span>`); }).catch(() => {});
 }
 async function loadTab() {
   store.set('oka-admin-tab', tab);
@@ -149,6 +162,7 @@ async function loadTab() {
     if (tab === 'orders') { await loadOrders(); }
     if (tab === 'production') { prod = await api('/api/admin/production'); renderProduction(); }
     if (tab === 'customers') { await loadCustomers(); }
+    if (tab === 'reviews') { await loadReviews(); }
     if (tab === 'products') { products = (await api('/api/admin/products')).products; renderProducts(); }
     if (tab === 'settings') { settings = (await api('/api/admin/settings')).settings; renderSettings(); }
     if (tab === 'team') { team = (await api('/api/admin/team')).team; renderTeam(); }
@@ -295,6 +309,27 @@ function renderCustomers() {
     </article>`).join('')}</div>`;
 }
 
+// ---------- reviews ----------
+async function loadReviews() { revData = await api('/api/admin/reviews?status=' + revFilter); renderReviews(); }
+function renderReviews() {
+  const d = revData, c = d.counts;
+  const chip = (k) => `<button type="button" class="chip" data-rvf="${k}" aria-pressed="${revFilter === k}">${t('rv_' + k)} <span class="num muted">${c[k]}</span></button>`;
+  const acts = (r) => ({
+    pending: `<button type="button" class="btn solid" data-rvset="approved" data-id="${r.id}">${t('rvApprove')}</button><button type="button" class="btn ghost" data-rvset="rejected" data-id="${r.id}">${t('rvReject')}</button>`,
+    approved: `<button type="button" class="btn ghost" data-rvset="rejected" data-id="${r.id}">${t('rvUnpublish')}</button>`,
+    rejected: `<button type="button" class="btn ghost" data-rvset="approved" data-id="${r.id}">${t('rvRestore')}</button>`,
+  })[r.status];
+  $('#body').innerHTML = `<p class="muted" style="margin-bottom:14px;max-width:62ch">${t('rvLead')}</p>
+    <div class="filters">${['pending', 'approved', 'rejected'].map(chip).join('')}</div>
+    <div class="olist">${!d.reviews.length ? `<p class="muted">${t('rvNone')[revFilter]}</p>` : d.reviews.map((r) => `<article class="orow" style="grid-template-columns:2fr 1fr auto">
+      <div><div class="stars" style="font-size:1.15rem" aria-label="${r.rating}/5">${'★'.repeat(r.rating)}${'☆'.repeat(5 - r.rating)}</div>
+        <p style="margin-top:6px;white-space:pre-wrap;overflow-wrap:anywhere">${esc(r.text)}</p>
+        <small style="margin-top:6px">— ${esc(r.display_name)}${r.product ? ` · ${esc(lang === 'zh' ? r.product.zh : r.product.en)}` : ` · ${t('rvWhole')}`}</small></div>
+      <div><small>${t('rvOrder')} <b style="color:var(--ink)">${esc(r.order_no)}</b></small><small>LINE: ${esc(r.line_name)}</small><small>${fmtTime(r.created_at)}</small>
+        ${r.decided_at ? `<small>${t('rv_' + r.status)} ${fmtTime(r.decided_at)} ${t('rvBy')(esc(r.decided_by))}</small>` : ''}</div>
+      <div class="acts">${acts(r)}</div></article>`).join('')}</div>`;
+}
+
 // ---------- products ----------
 function renderProducts() {
   const opt = (arr, cur, pre) => arr.map((v) => `<option value="${v}" ${v === cur ? 'selected' : ''}>${t(pre + v)}</option>`).join('');
@@ -418,6 +453,8 @@ document.addEventListener('click', async (e) => {
   if (d.move) return move(d.no, d.move);
   if (d.note) { try { await api(`/api/admin/orders/${encodeURIComponent(d.note)}/note`, { method: 'POST', body: { admin_note: $('#note-' + CSS.escape(d.note)).value } }); toast(t('noteSaved')); await loadOrders(); } catch (er) { handleErr(er); } return; }
   if (d.resend) { try { const r = await api(`/api/admin/orders/${encodeURIComponent(d.resend)}/resend`, { method: 'POST', body: {} }); toast(t('s_' + (r.result?.status || 'skipped'))); await loadOrders(); } catch (er) { handleErr(er); } return; }
+  if (d.rvf) { revFilter = d.rvf; return loadReviews().catch(handleErr); }
+  if (d.rvset) { try { await api(`/api/admin/reviews/${d.id}`, { method: 'POST', body: { status: d.rvset } }); toast(t('rvDone')[d.rvset]); await loadReviews(); } catch (er) { handleErr(er); } return; }
   if (d.cust) { const id = Number(d.cust); custOpen = custOpen === id ? null : id; custDetail = null; renderCustomers(); if (custOpen) { custDetail = await api(`/api/admin/customers/${id}`).catch(() => null); renderCustomers(); } return; }
   if (d.goorder) { tab = 'orders'; filter = 'all'; shipFilter = ''; query = d.goorder; openNo = d.goorder; detail = null; return renderShell(); }
   if (d.edit) { editing = { ...products.find((p) => p.id === d.edit) }; confirmKey = null; renderProducts(); window.scrollTo({ top: 0, behavior: 'smooth' }); return; }

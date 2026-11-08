@@ -51,6 +51,11 @@ const SCHEMA = [
   `CREATE TABLE IF NOT EXISTS messages (id INTEGER PRIMARY KEY AUTOINCREMENT, order_id INTEGER, to_line TEXT NOT NULL, kind TEXT NOT NULL,
      text TEXT NOT NULL, status TEXT NOT NULL, error TEXT DEFAULT '', at INTEGER NOT NULL)`,
   `CREATE INDEX IF NOT EXISTS idx_messages_order ON messages(order_id, at)`,
+  // One review per order, written after it has shipped; shown on the shop only once the team approves it.
+  `CREATE TABLE IF NOT EXISTS reviews (id INTEGER PRIMARY KEY AUTOINCREMENT, order_id INTEGER NOT NULL UNIQUE REFERENCES orders(id),
+     customer_id INTEGER NOT NULL REFERENCES customers(id), product_id TEXT, rating INTEGER NOT NULL, text TEXT NOT NULL, display_name TEXT NOT NULL,
+     status TEXT NOT NULL DEFAULT 'pending', created_at INTEGER NOT NULL, updated_at INTEGER, decided_at INTEGER, decided_by TEXT DEFAULT '')`,
+  `CREATE INDEX IF NOT EXISTS idx_reviews_status ON reviews(status, created_at)`,
 ];
 
 // ---------- helpers ----------
@@ -296,10 +301,20 @@ export function createApp({ db, timezone = 'Asia/Taipei', adminPassword = 'oka-a
     if (!c) return;
     await sendLine(c.line_user_id, kind, orderMessage(kind, orderOut(o), await getSettings(), site), o.id);
   }
-  async function alertTeam(o, kind) {
+  async function alertTeam(o, kind, extra) {
     const team = await db.all("SELECT line_user_id FROM admins WHERE active = 1 AND line_user_id IS NOT NULL AND line_user_id != ''");
-    const text = alertMessage(kind, orderOut(o));
+    const text = alertMessage(kind, orderOut(o), extra);
     for (const a of team) await sendLine(a.line_user_id, 'alert-' + kind, text, o.id);
+  }
+
+  // ---------- reviews ----------
+  const reviewOwnOut = (r) => ({ rating: r.rating, text: r.text, display_name: r.display_name, product_id: r.product_id, status: r.status, created_at: r.created_at });
+  async function publicReviews() {
+    const rows = await db.all(`SELECT r.rating, r.text, r.display_name, r.product_id, r.created_at, p.en, p.zh FROM reviews r LEFT JOIN products p ON p.id = r.product_id
+      WHERE r.status = 'approved' ORDER BY r.created_at DESC LIMIT 12`);
+    const s = await db.get("SELECT COUNT(*) AS n, AVG(rating) AS avg FROM reviews WHERE status = 'approved'");
+    return { count: s.n || 0, average: s.n ? Math.round(s.avg * 10) / 10 : null,
+      list: rows.map((r) => ({ rating: r.rating, text: r.text, name: r.display_name, product: r.product_id && r.en ? { id: r.product_id, en: r.en, zh: r.zh } : null, created_at: r.created_at })) };
   }
 
   // ---------- admin: production plan ----------
@@ -338,6 +353,7 @@ export function createApp({ db, timezone = 'Asia/Taipei', adminPassword = 'oka-a
     return json({
       products: await listProducts(false), settings: publicSettings(s), shipDates: await shipDates(s), today: dayKey(now()),
       me: customerOut(me), login: line.loginEnabled ? 'line' : devLogin ? 'dev' : 'off',
+      reviews: await publicReviews(),
     });
   });
 
@@ -392,13 +408,37 @@ export function createApp({ db, timezone = 'Asia/Taipei', adminPassword = 'oka-a
   route('GET', '/api/orders', async ({ req }) => {
     const cust = await requireCustomer(req);
     const rows = await db.all('SELECT * FROM orders WHERE customer_id = ? ORDER BY created_at DESC LIMIT 100', [cust.id]);
-    return json({ orders: rows.map((o) => orderOut(o)), bank: bankOf(await getSettings()) });
+    const revs = Object.fromEntries((await db.all('SELECT * FROM reviews WHERE customer_id = ?', [cust.id])).map((r) => [r.order_id, reviewOwnOut(r)]));
+    return json({ orders: rows.map((o) => ({ ...orderOut(o), review: revs[o.id] || null })), bank: bankOf(await getSettings()) });
   });
   route('GET', '/api/orders/:no', async ({ req, params }) => {
     const cust = await requireCustomer(req);
     const o = await db.get('SELECT * FROM orders WHERE no = ? AND customer_id = ?', [params.no, cust.id]);
     if (!o) throw new HttpError(404, 'Order not found');
-    return json({ order: orderOut(o), bank: bankOf(await getSettings()) });
+    const r = await db.get('SELECT * FROM reviews WHERE order_id = ?', [o.id]);
+    return json({ order: { ...orderOut(o), review: r ? reviewOwnOut(r) : null }, bank: bankOf(await getSettings()) });
+  });
+  // Customer writes (or, while it's still waiting for approval, corrects) the review of a shipped order.
+  route('POST', '/api/orders/:no/review', async ({ req, params, body, defer }) => {
+    const cust = await requireCustomer(req);
+    const o = await db.get('SELECT * FROM orders WHERE no = ? AND customer_id = ?', [params.no, cust.id]);
+    if (!o) throw new HttpError(404, 'Order not found');
+    if (o.status !== 'shipped') throw new HttpError(409, 'You can review an order once it has shipped');
+    const rating = Math.round(Number(body.rating));
+    if (!(rating >= 1 && rating <= 5)) throw new HttpError(400, 'Choose 1 to 5 stars');
+    const text = str(body.text, 500);
+    if (text.length < 5) throw new HttpError(400, 'Write a few words about your cheesecake');
+    const name = str(body.display_name, 30) || cust.line_name || 'OKA customer';
+    const inOrder = new Set(parseItems(o).flatMap((l) => (l.type === 'box' ? l.items.map((j) => j.id) : [l.id])));
+    const product = body.product_id && inOrder.has(String(body.product_id)) ? String(body.product_id) : null;
+    const cur = await db.get('SELECT * FROM reviews WHERE order_id = ?', [o.id]);
+    if (cur && cur.status !== 'pending') throw new HttpError(409, 'This review has already been checked by the shop');
+    if (cur) await db.run('UPDATE reviews SET rating = ?, text = ?, display_name = ?, product_id = ?, updated_at = ? WHERE id = ?', [rating, text, name, product, now(), cur.id]);
+    else await db.run('INSERT INTO reviews (order_id, customer_id, product_id, rating, text, display_name, status, created_at) VALUES (?,?,?,?,?,?,?,?)', [o.id, cust.id, product, rating, text, name, 'pending', now()]);
+    await addEvent(o.id, 'review', 'customer', `${rating}★`);
+    if (!cur) defer(alertTeam(o, 'review', { rating, text, name }));
+    const r = await db.get('SELECT * FROM reviews WHERE order_id = ?', [o.id]);
+    return json({ review: reviewOwnOut(r) }, cur ? 200 : 201);
   });
   route('POST', '/api/orders/:no/payment', async ({ req, params, body, defer }) => {
     const cust = await requireCustomer(req);
@@ -585,6 +625,27 @@ export function createApp({ db, timezone = 'Asia/Taipei', adminPassword = 'oka-a
     const lines = rows.map((c) => [c.id, c.line_name, c.name, c.phone, c.email, c.city, c.addr, c.friend === null ? '' : c.friend ? 'yes' : 'no', c.lang,
       iso(c.created_at), iso(c.last_login), c.orders, c.spent, iso(c.last_order)].map(csvCell).join(','));
     return new Response('﻿' + [head.join(','), ...lines].join('\r\n'), { headers: { 'Content-Type': 'text/csv; charset=utf-8', 'Content-Disposition': `attachment; filename="oka-customers-${dayKey(now())}.csv"`, 'Cache-Control': 'no-store' } });
+  });
+
+  // ----- admin: reviews -----
+  route('GET', '/api/admin/reviews', async ({ req, url }) => {
+    await requireAdmin(req);
+    const status = ['pending', 'approved', 'rejected'].includes(url.searchParams.get('status')) ? url.searchParams.get('status') : 'pending';
+    const rows = await db.all(`SELECT r.*, o.no, c.line_name, p.en, p.zh FROM reviews r JOIN orders o ON o.id = r.order_id JOIN customers c ON c.id = r.customer_id
+      LEFT JOIN products p ON p.id = r.product_id WHERE r.status = ? ORDER BY r.created_at DESC LIMIT 500`, [status]);
+    const counts = { pending: 0, approved: 0, rejected: 0 };
+    for (const c of await db.all('SELECT status, COUNT(*) AS n FROM reviews GROUP BY status')) counts[c.status] = c.n;
+    return json({ reviews: rows.map((r) => ({ id: r.id, order_no: r.no, line_name: r.line_name, rating: r.rating, text: r.text, display_name: r.display_name,
+      product: r.product_id && r.en ? { id: r.product_id, en: r.en, zh: r.zh } : null, status: r.status, created_at: r.created_at, decided_at: r.decided_at, decided_by: r.decided_by })), counts });
+  });
+  route('POST', '/api/admin/reviews/:id', async ({ req, params, body }) => {
+    const a = await requireAdmin(req);
+    const r = await db.get('SELECT * FROM reviews WHERE id = ?', [Number(params.id)]);
+    if (!r) throw new HttpError(404, 'Review not found');
+    if (!['approved', 'rejected', 'pending'].includes(body.status)) throw new HttpError(400, 'Unknown status');
+    await db.run('UPDATE reviews SET status = ?, decided_at = ?, decided_by = ? WHERE id = ?', [body.status, body.status === 'pending' ? null : now(), body.status === 'pending' ? '' : a.name, r.id]);
+    await addEvent(r.order_id, 'review-' + body.status, a.name);
+    return json({ ok: true });
   });
 
   // ----- admin: products -----

@@ -38,8 +38,8 @@ export function orderMessage(kind, o, s, site) {
         : `Payment of ${nt(o.total)} received, thank you! Order ${o.no} will leave Tainan chilled on ${shipDay(o.ship_date, 'en')}.`;
     case 'shipped':
       return zh
-        ? `訂單 ${o.no} 已出貨！${o.tracking_no ? `\n物流單號：${o.tracking_no}` : ''}\n收到後請盡快冷藏。`
-        : `Order ${o.no} has shipped!${o.tracking_no ? `\nTracking number: ${o.tracking_no}` : ''}\nPlease refrigerate the jars as soon as they arrive.`;
+        ? `訂單 ${o.no} 已出貨！${o.tracking_no ? `\n物流單號：${o.tracking_no}` : ''}\n收到後請盡快冷藏。\n\n品嚐後歡迎留下評價，給我們一點鼓勵：\n${site}/#review-${o.no}`
+        : `Order ${o.no} has shipped!${o.tracking_no ? `\nTracking number: ${o.tracking_no}` : ''}\nPlease refrigerate the jars as soon as they arrive.\n\nAfter tasting, we'd love a short review:\n${site}/#review-${o.no}`;
     case 'cancelled':
       return zh
         ? `訂單 ${o.no} 已取消。如有任何問題，請直接回覆這則訊息。`
@@ -50,7 +50,8 @@ export function orderMessage(kind, o, s, site) {
 }
 
 /** Alert to the shop team (always in Chinese with English labels kept short). kind: new | reported */
-export function alertMessage(kind, o) {
+export function alertMessage(kind, o, extra = {}) {
+  if (kind === 'review') return `⭐ 新評價待審核 New review to approve ${o.no}\n${'★'.repeat(extra.rating)}${'☆'.repeat(5 - extra.rating)} ${extra.name}\n「${String(extra.text).slice(0, 120)}」`;
   if (kind === 'new') return `🧾 新訂單 New order ${o.no}\n${o.name} · ${nt(o.total)}\n${itemsText(o, 'zh')}\n出貨 Ship ${shipDay(o.ship_date, 'zh')}`;
   if (kind === 'reported') return `💰 匯款回報 Transfer reported ${o.no}\n後五碼 Last 5: ${o.last5} · ${nt(o.total)}\n${o.name}`;
   return '';

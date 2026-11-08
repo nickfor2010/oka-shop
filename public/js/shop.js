@@ -3,13 +3,6 @@ import { $, esc, money, store, api, fmtDate, jar, art, toaster, LINE_ICON } from
 import { boxPrice, shippingFee, BOX_SIZE } from './pricing.js';
 
 const CITIES = ['台北市 Taipei', '新北市 New Taipei', '基隆市 Keelung', '桃園市 Taoyuan', '新竹市 Hsinchu City', '新竹縣 Hsinchu County', '苗栗縣 Miaoli', '台中市 Taichung', '彰化縣 Changhua', '南投縣 Nantou', '雲林縣 Yunlin', '嘉義市 Chiayi City', '嘉義縣 Chiayi County', '台南市 Tainan', '高雄市 Kaohsiung', '屏東縣 Pingtung', '宜蘭縣 Yilan', '花蓮縣 Hualien', '台東縣 Taitung', '澎湖縣 Penghu', '金門縣 Kinmen', '連江縣 Lienchiang'];
-const REVIEWS = [
-  { f: 'classic', name: '林志豪', text: '原味的奶香很乾淨，入口即化，全家都喜歡。', stars: 5 },
-  { f: 'chocolate', name: 'Daniel Wu', text: 'Silky chocolate, rich but never heavy. Arrived cold and beautifully packed.', stars: 5 },
-  { f: 'lemon', name: '王雅婷', text: '檸檬的酸度很清爽，夏天吃超幸福。', stars: 4 },
-  { f: 'biscoff', name: 'Sophie Lin', text: 'The Biscoff crumble on top is addictive. I wish I had ordered two jars.', stars: 5 },
-];
-
 const T = {
   en: {
     shop: 'Small Cheesecake Shop', navFlavors: 'Flavors', navBox: 'Gift Box', navStory: 'Our Story', navOrder: 'How to Order', bag: 'Bag',
@@ -59,6 +52,11 @@ const T = {
     loginCancelled: 'LINE login was cancelled.', loginFailed: "LINE login didn't work. Please try again.", loginExpired: 'The login took too long. Please try again.',
     loading: 'Loading…', retry: 'Something went wrong. Please try again.',
     themeAuto: 'Auto', themeLight: 'Day', themeDark: 'Night',
+    writeReview: 'Write a review', reviewT: 'Your review', reviewIntro: 'How was your cheesecake? Your review appears on the shop after we check it.',
+    rvStars: 'Your rating', rvFlavor: 'Which flavor is it about?', rvWhole: 'The whole order', rvText: 'Your review', rvTextPh: 'What did you like? 喜歡哪裡？',
+    rvName: 'Name shown with your review', rvSend: 'Send review', rvSending: 'Sending…', rvErrStars: 'Choose 1 to 5 stars.', rvErrText: 'Write a few words about your cheesecake.',
+    rvThanks: 'Thank you! Your review will appear on the shop once we have checked it.', rv_pending: 'Review sent · waiting for approval', rv_approved: 'Review published · thank you!', rv_rejected: 'Review received · thank you!',
+    rvEdit: 'Edit review', rvNotYet: 'You can review this order once it has shipped.', starN: (n) => `${n} star${n > 1 ? 's' : ''}`,
     share: 'Share OKA with friends', shareTitle: 'Share OKA', shareLine: 'Send on LINE', shareFb: 'Share on Facebook', shareCopy: 'Copy link', shareCopied: 'Link copied',
     shareText: 'OKA: handmade cheesecake in little jars, made in Tainan and shipped chilled across Taiwan 🫙', shareAfter: 'Know someone who would love OKA? Share the shop',
   },
@@ -110,6 +108,11 @@ const T = {
     loginCancelled: '已取消 LINE 登入。', loginFailed: 'LINE 登入失敗，請再試一次。', loginExpired: '登入逾時，請再試一次。',
     loading: '載入中…', retry: '發生錯誤，請再試一次。',
     themeAuto: '自動', themeLight: '日間', themeDark: '夜間',
+    writeReview: '留下評價', reviewT: '你的評價', reviewIntro: '起司蛋糕好吃嗎？我們確認後，你的評價就會出現在商店頁面。',
+    rvStars: '評分', rvFlavor: '關於哪個口味？', rvWhole: '整筆訂單', rvText: '評價內容', rvTextPh: '喜歡哪裡？ What did you like?',
+    rvName: '顯示的名稱', rvSend: '送出評價', rvSending: '送出中…', rvErrStars: '請選擇 1 到 5 顆星。', rvErrText: '請寫幾句關於起司蛋糕的感想。',
+    rvThanks: '謝謝你！我們確認後，評價就會出現在商店頁面。', rv_pending: '評價已送出 · 等待審核', rv_approved: '評價已刊登 · 謝謝你！', rv_rejected: '已收到評價 · 謝謝你！',
+    rvEdit: '修改評價', rvNotYet: '訂單出貨後就可以留下評價。', starN: (n) => `${n} 顆星`,
     share: '分享 OKA 給朋友', shareTitle: '分享 OKA', shareLine: '用 LINE 傳送', shareFb: '分享到 Facebook', shareCopy: '複製連結', shareCopied: '已複製連結',
     shareText: 'OKA 小小起司蛋糕：台南手作，一罐一罐低溫寄送到全台灣 🫙', shareAfter: '有朋友也會喜歡嗎？分享給他們',
   },
@@ -120,7 +123,8 @@ let lang = store.get('oka-lang', (navigator.language || '').startsWith('zh') ? '
 if (!T[lang]) lang = 'en';
 let cart = store.get('oka-cart', []);
 if (!Array.isArray(cart)) cart = [];
-let products = [], settings = null, shipDates = [], me = null, loginMode = 'off', loaded = false;
+let products = [], settings = null, shipDates = [], me = null, loginMode = 'off', loaded = false, reviews = { count: 0, average: null, list: [] };
+let rvNo = null, rvRating = 0, rvDone = false;
 let box = [], boxQty = 1, qtys = {}, view = 'bag', payNo = null, orders = null, bank = null, busy = false, payEdit = false;
 
 const t = (k) => T[lang][k] ?? T.en[k];
@@ -210,12 +214,12 @@ function renderBox() {
   $('#boxOffHint').textContent = !box.length ? '' : full ? t('boxOffYes')(s.boxOff) : t('boxMoreOff')(BOX_SIZE - box.length, s.boxOff);
 }
 function renderReviews() {
-  const list = REVIEWS.filter((r) => avail(r.f));
+  // Only reviews the shop has approved; the section stays hidden until there is at least one.
+  const list = reviews.list;
   $('#reviews').hidden = !list.length;
   if (!list.length) return;
-  const avg = (list.reduce((s, r) => s + r.stars, 0) / list.length).toFixed(1);
-  $('#revSummary').textContent = t('revSummary')(avg, list.length);
-  $('#reviewList').innerHTML = list.map((r) => `<figure class="review" style="margin:0"><div class="stars" aria-label="${r.stars}/5">${'★'.repeat(r.stars)}${'☆'.repeat(5 - r.stars)}</div><blockquote>${esc(r.text)}</blockquote><cite>${esc(r.name)} <span>· ${esc(pname(P(r.f)))}</span></cite></figure>`).join('');
+  $('#revSummary').textContent = t('revSummary')(reviews.average.toFixed(1), reviews.count);
+  $('#reviewList').innerHTML = list.map((r) => `<figure class="review" style="margin:0"><div class="stars" aria-label="${t('starN')(r.rating)}">${'★'.repeat(r.rating)}${'☆'.repeat(5 - r.rating)}</div><blockquote>${esc(r.text)}</blockquote><cite>${esc(r.name)}${r.product ? ` <span>· ${esc(lang === 'zh' ? r.product.zh : r.product.en)}</span>` : ''}</cite></figure>`).join('');
 }
 
 // ---------- bag ----------
@@ -262,7 +266,7 @@ function field(n, type, label, val, attrs = '') {
 function renderBag() {
   $('#bagcount').textContent = cart.reduce((s, l) => s + l.qty, 0);
   const body = $('#dbody'), foot = $('#dfoot');
-  $('#dtitle').textContent = { bag: t('yourBag'), login: t('login'), checkout: t('checkout'), pay: t('payT'), orders: t('myOrders') }[view];
+  $('#dtitle').textContent = { bag: t('yourBag'), login: t('login'), checkout: t('checkout'), pay: t('payT'), orders: t('myOrders'), review: t('reviewT') }[view];
   if (!settings) { body.innerHTML = `<p class="muted"><span class="loading"></span> ${t('loading')}</p>`; foot.innerHTML = ''; return; }
 
   if (view === 'login') {
@@ -274,6 +278,7 @@ function renderBag() {
     return;
   }
   if (view === 'pay') return renderPay(body, foot);
+  if (view === 'review') return renderReview(body, foot);
   if (view === 'orders') return renderOrders(body, foot);
 
   const ordersLink = me ? `<p style="margin-bottom:10px"><button type="button" class="dlink" id="toOrders">${t('myOrders')}</button></p>` : '';
@@ -352,8 +357,62 @@ function renderOrders(body, foot) {
       <div class="r"><small>${t('ships')} ${esc(fmtDate(o.ship_date, lang))}${o.tracking_no ? ` · ${t('tracking')} ${esc(o.tracking_no)}` : ''}</small><strong class="num">${money(o.total)}</strong></div>
       ${o.status !== 'cancelled' ? `<div class="statusline" aria-hidden="true">${[1, 2, 3, 4].map((i) => `<i class="${i <= step ? 'on' : ''}"></i>`).join('')}</div>` : ''}
       ${o.status === 'awaiting' ? `<button type="button" class="btn solid" style="padding:8px 14px;font-size:.9rem" data-pay="${esc(o.no)}">${t('reportNow')}</button>` : ''}
+      ${o.status === 'shipped' ? (o.review ? `<small>${'★'.repeat(o.review.rating)} ${t('rv_' + o.review.status)}${o.review.status === 'pending' ? ` · <button type="button" class="dlink" data-review="${esc(o.no)}">${t('rvEdit')}</button>` : ''}</small>`
+    : `<button type="button" class="btn ghost" style="padding:8px 14px;font-size:.9rem" data-review="${esc(o.no)}">★ ${t('writeReview')}</button>`) : ''}
     </div>`;
   }).join(''));
+}
+
+function renderReview(body, foot) {
+  const o = orders?.find((x) => x.no === rvNo);
+  if (!o) { body.innerHTML = `<p class="muted"><span class="loading"></span> ${t('loading')}</p>`; foot.innerHTML = ''; return; }
+  if (rvDone) {
+    body.innerHTML = `<div class="loginbox"><span class="logo" aria-hidden="true"></span><p style="font-size:1.4rem;color:var(--crust)">${'★'.repeat(rvRating)}</p><p>${t('rvThanks')}</p></div>`;
+    foot.innerHTML = `<button type="button" class="btn solid" id="toOrders">${t('myOrders')}</button>`;
+    return;
+  }
+  if (o.status !== 'shipped' || (o.review && o.review.status !== 'pending')) {
+    body.innerHTML = `<p class="note">${o.review ? t('rv_' + o.review.status) : t('rvNotYet')}</p>`;
+    foot.innerHTML = `<button type="button" class="btn ghost" id="toOrders">${t('myOrders')}</button>`;
+    return;
+  }
+  const r = o.review || {};
+  if (!rvRating && r.rating) rvRating = r.rating;
+  const ids = [...new Set(o.items.flatMap((l) => (l.type === 'box' ? l.items.map((j) => j.id) : [l.id])))];
+  const nameOf = (id) => { for (const l of o.items) { if (l.id === id) return lang === 'zh' ? l.zh : l.en; const j = l.items?.find((x) => x.id === id); if (j) return lang === 'zh' ? j.zh : j.en; } return id; };
+  body.innerHTML = `<form class="co" id="rvForm" novalidate>
+    <p class="muted" style="font-size:.9rem">${esc(o.no)} · ${t('reviewIntro')}</p>
+    <div class="field"><span style="font-weight:700;font-size:.88rem" id="rvStarsL">${t('rvStars')}</span>
+      <div class="starpick" role="radiogroup" aria-labelledby="rvStarsL">${[1, 2, 3, 4, 5].map((n) => `<button type="button" role="radio" aria-checked="${n === rvRating}" aria-label="${t('starN')(n)}" data-star="${n}" class="${n <= rvRating ? 'on' : ''}">★</button>`).join('')}</div>
+      <span class="err" id="e-rating" hidden></span></div>
+    ${ids.length > 1 ? `<div class="field"><label for="f-rvp">${t('rvFlavor')}</label><select id="f-rvp" name="product_id"><option value="">${t('rvWhole')}</option>${ids.map((id) => `<option value="${esc(id)}" ${r.product_id === id ? 'selected' : ''}>${esc(nameOf(id))}</option>`).join('')}</select></div>` : `<input type="hidden" name="product_id" value="${esc(ids[0] || '')}">`}
+    <div class="field"><label for="f-rvt">${t('rvText')}</label><textarea id="f-rvt" name="text" rows="4" maxlength="500" placeholder="${esc(t('rvTextPh'))}">${esc(r.text || '')}</textarea><span class="err" id="e-text" hidden></span></div>
+    ${field('rvn', 'text', t('rvName'), r.display_name || me?.name || '', 'maxlength="30" autocomplete="nickname"')}
+    <p class="err" id="e-rv" hidden></p>
+  </form>`;
+  foot.innerHTML = `<button type="submit" form="rvForm" class="btn solid" id="rvSend">${t('rvSend')}</button><button type="button" class="btn ghost" id="toOrders">${t('myOrders')}</button>`;
+}
+async function sendReview(form) {
+  if (busy) return;
+  const fd = new FormData(form), text = String(fd.get('text') || '').trim();
+  const er = $('#e-rating'), et = $('#e-text');
+  er.hidden = !!rvRating; er.textContent = t('rvErrStars');
+  et.hidden = text.length >= 5; et.textContent = t('rvErrText');
+  if (!rvRating || text.length < 5) return;
+  busy = true; const b = $('#rvSend'); b.disabled = true; b.textContent = t('rvSending');
+  try {
+    const r = await api(`/api/orders/${encodeURIComponent(rvNo)}/review`, { method: 'POST', body: { rating: rvRating, text, product_id: fd.get('product_id') || '', display_name: String(fd.get('rvn') || '').trim() } });
+    orders = orders.map((o) => (o.no === rvNo ? { ...o, review: r.review } : o));
+    rvDone = true; renderBag();
+  } catch (e) { const el = $('#e-rv'); el.textContent = e.message; el.hidden = false; b.disabled = false; b.textContent = t('rvSend'); } finally { busy = false; }
+}
+async function openReview(no) {
+  if (!me) { pendingReturn = `/#review-${no}`; view = 'login'; renderBag(); openBag(); return; }
+  rvNo = no; rvRating = 0; rvDone = false; view = 'review';
+  orders = (orders || []).filter((o) => o.no !== no); // always use the latest status (it may have shipped since)
+  openBag(); renderBag();
+  try { const r = await api(`/api/orders/${encodeURIComponent(no)}`); orders = [r.order, ...orders]; bank = r.bank; } catch { return go('orders'); }
+  renderBag();
 }
 
 // ---------- actions ----------
@@ -444,6 +503,8 @@ document.addEventListener('click', async (e) => {
   if (d.rm) { box.splice(Number(d.rm), 1); renderBox(); return; }
   if (d.lq) { const l = cart[Number(d.lq)]; l.qty += Number(d.d); if (l.qty < 1) cart.splice(Number(d.lq), 1); saveCart(); renderBag(); return; }
   if (d.pay) { payNo = d.pay; payEdit = false; view = 'pay'; renderBag(); return; }
+  if (d.review) { openReview(d.review); return; }
+  if (d.star) { rvRating = Number(d.star); document.querySelectorAll('[data-star]').forEach((x) => { const n = Number(x.dataset.star); x.classList.toggle('on', n <= rvRating); x.setAttribute('aria-checked', String(n === rvRating)); }); $('#e-rating').hidden = true; return; }
   if (d.copy) {
     const okFn = () => { const o = b.textContent; b.textContent = t('copied'); setTimeout(() => (b.textContent = o), 1500); };
     try { navigator.clipboard.writeText(d.copy).then(okFn, () => selectText(b.previousElementSibling || b.parentElement)); } catch { selectText(b.previousElementSibling || b.parentElement); }
@@ -470,7 +531,10 @@ document.addEventListener('click', async (e) => {
     case 'logout': await api('/api/logout', { method: 'POST' }).catch(() => {}); me = null; orders = null; view = 'bag'; renderAll(); break;
   }
 });
-document.addEventListener('input', (e) => { if (e.target.id === 'f-last5') e.target.value = e.target.value.replace(/\D/g, '').slice(0, 5); });
+document.addEventListener('input', (e) => {
+  if (e.target.id === 'f-last5') e.target.value = e.target.value.replace(/\D/g, '').slice(0, 5);
+  if (e.target.id === 'f-rvt' && e.target.value.trim().length >= 5) $('#e-text').hidden = true;
+});
 $('#scrim').addEventListener('click', closeBag);
 document.addEventListener('keydown', (e) => {
   if (e.key !== 'Escape') return;
@@ -503,6 +567,7 @@ document.addEventListener('submit', (e) => {
   e.preventDefault();
   if (e.target.id === 'coForm') placeOrder(e.target);
   if (e.target.id === 'payForm') reportPayment(e.target);
+  if (e.target.id === 'rvForm') sendReview(e.target);
 });
 
 function renderShop() { applyI18n(); renderShelf(); renderFlavors(); renderBox(); renderReviews(); }
@@ -511,7 +576,7 @@ function renderAll() { renderShop(); renderBag(); }
 async function loadShop() {
   try {
     const r = await api('/api/shop');
-    products = r.products; settings = r.settings; shipDates = r.shipDates; me = r.me; loginMode = r.login; loaded = true;
+    products = r.products; settings = r.settings; shipDates = r.shipDates; me = r.me; loginMode = r.login; loaded = true; reviews = r.reviews || reviews;
     cart = cart.filter((l) => (l.type === 'box' ? l.items.every((i) => P(i)) : P(l.id))); saveCart();
     renderAll();
   } catch {
@@ -523,6 +588,7 @@ function handleHash() {
   const h = location.hash;
   if (h === '#checkout' && cart.length) { history.replaceState(null, '', location.pathname); go('checkout'); openBag(); }
   else if (h === '#orders') { history.replaceState(null, '', location.pathname); go('orders'); openBag(); }
+  else if (h.startsWith('#review-')) { const no = decodeURIComponent(h.slice(8)); history.replaceState(null, '', location.pathname); openReview(no); }
   else if (h.startsWith('#order-')) { const no = decodeURIComponent(h.slice(7)); history.replaceState(null, '', location.pathname); openOrder(no); }
 }
 
